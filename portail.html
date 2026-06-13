@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL-7 · Terminal Central</title>
+<style>
+  :root{ --bg:#0c1310; --panel:#121c17; --panel2:#0f1813; --line:#21342a; --txt:#dbe4dc; --mut:#8a988e; --green:#46ff7a; --amber:#ffb347; }
+  *{ box-sizing:border-box; } body{ margin:0; background:var(--bg); color:var(--txt); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+  a{ color:inherit; text-decoration:none; }
+  header{ position:sticky; top:0; z-index:20; background:#0c1310; border-bottom:1px solid var(--line); padding:14px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .brand{ font-family:"VT323",Consolas,monospace; font-size:26px; letter-spacing:1px; color:var(--green); text-shadow:0 0 8px rgba(70,255,122,.4); white-space:nowrap; } .brand b{ color:var(--amber); }
+  .searchwrap{ flex:1; min-width:240px; position:relative; }
+  #q{ width:100%; background:var(--panel); border:1px solid var(--line); color:var(--txt); font-size:17px; padding:11px 14px 11px 40px; border-radius:8px; outline:none; } #q:focus{ border-color:var(--green); }
+  .searchwrap::before{ content:"⌕"; position:absolute; left:13px; top:9px; font-size:20px; color:var(--mut); }
+  #drop{ position:absolute; left:0; right:0; top:48px; background:var(--panel); border:1px solid var(--line); border-radius:8px; max-height:55vh; overflow:auto; display:none; z-index:30; }
+  #drop .r{ padding:9px 14px; cursor:pointer; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:baseline; } #drop .r:hover{ background:#15211b; }
+  #drop .r .n{ font-weight:600; } #drop .r .m{ color:var(--mut); font-size:13px; }
+  main{ max-width:1120px; margin:0 auto; padding:24px 22px 70px; }
+  h2{ font-family:"VT323",Consolas,monospace; color:var(--amber); letter-spacing:1px; font-size:22px; border-bottom:1px solid var(--line); padding-bottom:6px; margin:30px 0 16px; }
+  .docs{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; }
+  .doc{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--green); border-radius:8px; padding:14px 16px; }
+  .doc:hover{ border-color:var(--green); background:#15211b; } .doc .t{ font-size:17px; font-weight:600; } .doc .d{ color:var(--mut); font-size:13.5px; margin-top:4px; }
+  .doc.amber{ border-left-color:var(--amber); } .doc.blue{ border-left-color:#5db4ff; } .doc.pink{ border-left-color:#cf7bd8; }
+  .eps{ display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px; }
+  .ep{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px 14px; display:flex; gap:12px; align-items:center; }
+  .ep .num{ font-family:"VT323",monospace; font-size:30px; color:var(--amber); width:42px; text-align:center; }
+  .ep .mid{ flex:1; min-width:0; } .ep .ti{ font-weight:600; font-size:16px; } .ep .ho{ color:var(--mut); font-size:13px; margin-top:2px; }
+  .ep .act{ display:flex; gap:6px; }
+  .mini{ cursor:pointer; border:1px solid var(--line); color:var(--txt); padding:5px 10px; border-radius:6px; font-size:13px; white-space:nowrap; }
+  .mini.play{ border-color:var(--green); color:var(--green); } .mini.play:hover{ background:var(--green); color:#04140a; }
+  .mini:hover{ background:#15211b; }
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+  .chip{ cursor:pointer; border:1px solid var(--line); color:var(--mut); padding:5px 13px; border-radius:20px; font-size:14px; } .chip.on{ background:var(--green); color:#04140a; border-color:var(--green); font-weight:600; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px; }
+  .npc{ background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:11px 13px; cursor:pointer; } .npc:hover{ border-color:var(--amber); }
+  .npc .n{ font-weight:600; font-size:16px; } .npc .r{ color:var(--mut); font-size:13px; margin-top:2px; }
+  .npc .f{ display:inline-block; margin-top:7px; font-size:11px; padding:2px 8px; border-radius:10px; background:#15211b; color:var(--green); }
+  .empty{ color:var(--mut); padding:14px 2px; display:none; }
+  #ov{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:flex-start; justify-content:center; z-index:40; padding:40px 16px; overflow:auto; }
+  #card{ width:min(740px,100%); background:var(--panel2); border:1px solid var(--line); border-radius:12px; }
+  #card .hd{ padding:18px 22px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+  #card .nm{ font-size:24px; font-weight:600; } #card .ro{ color:var(--amber); font-size:15px; margin-top:3px; } #card .x{ cursor:pointer; color:var(--mut); font-size:24px; }
+  #card .bd{ padding:18px 22px 24px; } .quote{ font-style:italic; color:#c9d3ca; border-left:3px solid var(--amber); padding-left:12px; margin:0 0 16px; }
+  .sheet{ background:#0c1611; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:16px; }
+  .sheet .row{ display:grid; grid-template-columns:150px 1fr; gap:0; border-top:1px solid var(--line); }
+  .sheet .row:first-child{ border-top:none; } .sheet .k{ background:#10201a; color:var(--green); padding:8px 12px; font-size:13px; font-weight:600; } .sheet .v{ padding:8px 12px; font-size:14.5px; }
+  .blk{ margin:0 0 14px; } .blk .h{ font-weight:600; color:var(--green); margin-bottom:4px; }
+  .secret{ background:#1c1212; border:1px solid #5b2b2b; border-radius:8px; padding:10px 13px; } .secret .h{ color:#e88; }
+  .npc .thumb{ width:100%; height:96px; object-fit:cover; border-radius:6px; margin-bottom:8px; background:#0c1611; display:block; }
+  #card .banner{ width:100%; max-height:240px; object-fit:cover; display:block; border-radius:12px 12px 0 0; }
+  ul{ margin:6px 0 0; padding-left:18px; } li{ margin:3px 0; } .foot{ color:var(--mut); font-size:13px; text-align:center; margin-top:40px; }
+  .help{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--amber); border-radius:8px; padding:13px 16px; margin:0 0 6px; color:var(--mut); font-size:14px; line-height:1.6; }
+  .help b{ color:var(--txt); } .help .ttl{ color:var(--amber); font-family:"VT323",Consolas,monospace; font-size:18px; letter-spacing:1px; display:block; margin-bottom:4px; }
+</style>
+</head>
+<body>
+<header>
+  <a href="index.html" style="color:var(--mut);font-size:14px;white-space:nowrap;align-self:center">‹ Accueil</a>
+  <div class="brand">ROBCO · <b>SENTINEL-7</b> · ESPACE MJ</div>
+  <div class="searchwrap">
+    <input id="q" placeholder="Rechercher un personnage, un rôle, une faction…  (ex : Marcus, agent de sécurité, goule)" autocomplete="off">
+    <div id="drop"></div>
+  </div>
+</header>
+<main>
+  <div class="help">
+    <span class="ttl" style="color:#ff6a4a">⚠ Espace Maître du Jeu — cette page contient TOUS les secrets de la campagne</span>
+    <span class="ttl">Comment ça marche</span>
+    <b>Lancer une partie :</b> dans « Les épisodes », clique <b>▶ Jouer</b> → la console de jeu s'ouvre (un bouton <b>? AIDE</b> t'y explique tout). Sur chaque épisode : <b>▶ Jouer</b> (console) · <b>Livret</b> (le scénario Word) · <b>Kit IA</b> (prompt pour faire jouer le Conseiller par une IA) · <b>Teaser</b> (bande-annonce de fin de séance).<br>
+    <b>Chercher un personnage :</b> tape un nom dans la barre du haut → sa fiche complète. <b>Ajouter une image :</b> dépose-la, bien nommée, dans ce dossier (voir Annexes → « Noms des images à déposer ») et elle apparaît toute seule. <b>Garde tous les fichiers dans le même dossier.</b>
+  </div>
+
+  <h2>Documents & lecture</h2>
+  <div class="docs" id="docs"></div>
+
+  <h2>Annexes & outils</h2>
+  <div class="docs" id="annex"></div>
+
+  <h2>Les épisodes — lancer une partie</h2>
+  <div class="eps" id="epsEl"></div>
+
+  <h2>Base de personnages</h2>
+  <div class="chips" id="chips"></div>
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty">Aucun personnage ne correspond.</div>
+
+  <div class="foot">Sentinel-7 — outil du Maître de Jeu · gardez tous les fichiers dans le même dossier · prêt pour GitHub Pages.</div>
+</main>
+<div id="ov"><div id="card"></div></div>
+
+<script src="npc-data.js"></script>
+<script>
+const DOCS=[
+ {t:"Dossier maître du projet",d:"Tout le projet rangé : canon, décisions, inventaire, état",href:"00_PROJET_Sentinel7_Dossier_Maitre.md",c:""},
+ {t:"Livret du joueur (à partager)",d:"Intro sans spoiler — bienvenue, chronique, règles, perso",href:"joueurs.html",c:"amber"},
+ {t:"Console de jeu",d:"Écran joueur + terminaux animés — toute la saison",href:"CONSOLE_SENTINEL7.html",c:""},
+ {t:"Le Livre de Campagne (PDF)",d:"L'œuvre complète — à lire / imprimer",href:"Sentinel7_Livre_Complet.pdf",c:"amber"},
+ {t:"Le Livre de Campagne (Word)",d:"Source éditable .docx",href:"Sentinel7_Livre_Complet.docx",c:""},
+ {t:"Bible de Showrunner",d:"Grille de saison, fils rouges, méthode",href:"FALLOUT_STATION_Bible_de_Showrunner.docx",c:""},
+ {t:"L'arc du Parachute",d:"Évasion lunaire cachée (.docx)",href:"FALLOUT_STATION_Le_Fil_du_Parachute.docx",c:"blue"},
+ {t:"Cerveau d'Eden",d:"Character card pour IA locale (le Conseiller)",href:"EDEN_Conseiller_CharacterCard.md",c:"pink"},
+];
+const ANNEX=[
+ {t:"Terminal autonome",d:"Le terminal Fallout (boot, menus)",href:"TERMINAL_SENTINEL7.html",c:""},
+ {t:"Carte de combat — Delta-7 (G–J)",d:"Carte tactique SVG, imprimable",href:"carte_combat_ep1_rangees_GJ.svg",c:"blue"},
+ {t:"Teaser — Épisode 2",d:"Speech + storyboard du teaser de fin",href:"Teaser_Ep2.md",c:"amber"},
+ {t:"Prompts d'illustrations & cartes",d:"Un prompt par scène (épisode 1)",href:"Episode1_Prompts_Illustrations_et_Cartes.md",c:""},
+ {t:"Noms des images à déposer",d:"La liste des fichiers image (PNJ + scènes)",href:"Noms_des_images_a_deposer.md",c:""},
+ {t:"Codex d'enrichissement Fallout",d:"Micro-factions, expériences ratées, décor parlant, humour noir",href:"Codex_Enrichissement_Fallout.md",c:"amber"},
+ {t:"Établi orbital — recettes",d:"Récup & artisanat : armes, bouffe, chems, survie",href:"Etabli_Orbital_Recettes.md",c:""},
+ {t:"Économie & boutiques",d:"Monnaie (capsules Star-Cola), rareté, vendeurs & prix",href:"Economie_et_Boutiques.md",c:""},
+ {t:"Cartes de recettes (à imprimer)",d:"Les 40 recettes en cartes Fallout, filtrables",href:"cartes_recettes.html",c:"amber"},
+ {t:"⬇ Tout télécharger (ZIP)",d:"Le pack complet de la campagne en une archive",href:"Sentinel7_Pack_Complet.zip",c:"blue"},
+];
+const HOM=["The Truman Show","« The Lottery » / Snowpiercer","Lettres d'Iwo Jima","Alien","1984 / La Vie des autres","Fahrenheit 451","Apocalypse Now","Moon","Gattaca / Soleil Vert","2001 : l'Odyssée de l'espace"];
+const DB=window.NPCDB, F=DB.factions, NPC=DB.list;
+function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,''); }
+function imgPnj(p,cls){ const f='img_pnj_'+slug(p.n); return '<img class="'+cls+'" src="'+f+'.jpg" onerror="this.onerror=function(){this.style.display=&#39;none&#39;};this.src=&#39;'+f+'.png&#39;">'; }
+
+function renderDocs(arr, el){ arr.forEach(d=>{ const a=document.createElement('a'); a.className='doc '+(d.c||''); a.href=d.href; a.target='_blank'; a.innerHTML='<div class="t">'+d.t+'</div><div class="d">'+d.d+'</div>'; el.appendChild(a); }); }
+renderDocs(DOCS, document.getElementById('docs'));
+renderDocs(ANNEX, document.getElementById('annex'));
+
+const epsEl=document.getElementById('epsEl');
+DB.episodes.forEach((t,i)=>{ const n=i+1; const d=document.createElement('div'); d.className='ep';
+  d.innerHTML='<div class="num">'+n+'</div><div class="mid"><div class="ti">'+t+'</div><div class="ho">hommage : '+HOM[i]+'</div></div>';
+  const act=document.createElement('div'); act.className='act';
+  const play=document.createElement('a'); play.className='mini play'; play.textContent='▶ Jouer'; play.href='CONSOLE_SENTINEL7.html#ep'+n; play.target='_blank';
+  const read=document.createElement('a'); read.className='mini'; read.textContent='Livret'; read.href='Sentinel7_Scenario_'+String(n).padStart(2,'0')+'.docx'; read.target='_blank';
+  const kit=document.createElement('a'); kit.className='mini'; kit.textContent='Kit IA'; kit.href='Kit_Vocal_Ep'+n+'.md'; kit.target='_blank'; kit.title='Prompt + base de scène pour IA vocale (le Conseiller)';
+  if(n>=2){ const tz=document.createElement('a'); tz.className='mini'; tz.textContent='Teaser'; tz.href='Teaser_Ep'+n+'.md'; tz.target='_blank'; tz.title='Speech + storyboard du teaser de fin'; act.appendChild(tz); }
+  act.appendChild(play); act.appendChild(read); act.appendChild(kit); d.appendChild(act); epsEl.appendChild(d); });
+
+const chipsEl=document.getElementById('chips'), grid=document.getElementById('grid'), empty=document.getElementById('empty');
+let fil='ALL', term='';
+function chip(id,label){ const c=document.createElement('div'); c.className='chip'+(id==='ALL'?' on':''); c.textContent=label;
+  c.onclick=()=>{ fil=id; document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); render(); }; chipsEl.appendChild(c); }
+chip('ALL','Tous'); Object.keys(F).forEach(k=>chip(k,F[k]));
+function match(p){ const t=term.toLowerCase(); if(fil!=='ALL'&&p.f!==fil) return false; if(!t) return true; return (p.n+' '+p.r+' '+F[p.f]).toLowerCase().includes(t); }
+function render(){ grid.innerHTML=''; let n=0;
+  NPC.filter(match).forEach(p=>{ n++; const d=document.createElement('div'); d.className='npc';
+    d.innerHTML=imgPnj(p,'thumb')+'<div class="n">'+p.n+'</div><div class="r">'+p.r+'</div><div class="f">'+F[p.f]+'</div>'; d.onclick=()=>openCard(p); grid.appendChild(d); });
+  empty.style.display=n?'none':'block'; }
+function row(k,v){ return v?('<div class="row"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'):''; }
+function openCard(p){ const ov=document.getElementById('ov'), card=document.getElementById('card');
+  let h=imgPnj(p,'banner')+'<div class="hd"><div><div class="nm">'+p.n+'</div><div class="ro">'+p.r+' · '+F[p.f]+'</div></div><div class="x" onclick="document.getElementById(\'ov\').style.display=\'none\'">✕</div></div><div class="bd">';
+  if(p.q) h+='<div class="quote">« '+p.q+' »</div>';
+  const sheet=row("S.P.E.C.I.A.L.",p.special)+row("PV / Déf / Init",p.pv)+row("Compétences",p.comp)+row("Traits",p.traits)+row("Équipement",p.equip)+row("Statut",p.stat);
+  if(sheet) h+='<div class="sheet">'+sheet+'</div>';
+  if(p.facade) h+='<div class="blk"><div class="h">Façade — ce que voient les PJ</div>'+p.facade+'</div>';
+  if(p.secret) h+='<div class="secret blk"><div class="h">Secret MJ</div>'+p.secret+'</div>';
+  if(p.cons) h+='<div class="blk"><div class="h">Conseils de jeu</div><ul>'+p.cons.map(c=>'<li>'+c+'</li>').join('')+'</ul></div>';
+  if(p.lev) h+='<div class="blk"><div class="h">Levier</div>'+p.lev+'</div>';
+  if(p.ep&&p.ep.length) h+='<div class="blk" style="color:#8a988e;font-size:13px">Apparaît aux épisodes : '+p.ep.join(', ')+'</div>';
+  h+='</div>'; card.innerHTML=h; ov.style.display='flex'; ov.scrollTop=0; }
+document.getElementById('ov').onclick=e=>{ if(e.target.id==='ov') e.currentTarget.style.display='none'; };
+addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('ov').style.display='none'; });
+
+const q=document.getElementById('q'), drop=document.getElementById('drop');
+q.addEventListener('input',()=>{ term=q.value.trim(); render();
+  if(!term){ drop.style.display='none'; return; }
+  const res=NPC.filter(match).slice(0,9); drop.innerHTML='';
+  res.forEach(p=>{ const r=document.createElement('div'); r.className='r'; r.innerHTML='<span class="n">'+p.n+'</span><span class="m">'+p.r+' · '+F[p.f]+'</span>'; r.onclick=()=>{ drop.style.display='none'; openCard(p); }; drop.appendChild(r); });
+  drop.style.display=res.length?'block':'none'; });
+q.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const r=NPC.filter(match); if(r.length){ drop.style.display='none'; openCard(r[0]); } } });
+document.addEventListener('click',e=>{ if(!e.target.closest('.searchwrap')) drop.style.display='none'; });
+render();
+(function(){ const l=document.createElement('link'); l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family=VT323&display=swap'; document.head.appendChild(l); })();
+</script>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       

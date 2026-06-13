@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL-7 · Cartes de recettes — Établi orbital</title>
+<style>
+  :root{ --bg:#0c1310; --panel:#101a14; --line:#21342a; --txt:#dbe4dc; --mut:#8a988e; --green:#46ff7a; --amber:#ffb347; }
+  *{ box-sizing:border-box; } body{ margin:0; background:var(--bg); color:var(--txt); font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif; }
+  header{ position:sticky; top:0; z-index:10; background:#0c1310; border-bottom:1px solid var(--line); padding:14px 22px; }
+  .brand{ font-family:"VT323",Consolas,monospace; font-size:26px; letter-spacing:1px; color:var(--green); text-shadow:0 0 8px rgba(70,255,122,.4); } .brand b{ color:var(--amber); }
+  .sub{ color:var(--mut); font-size:13px; margin-top:2px; } .sub a{ color:var(--amber); }
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .chip{ cursor:pointer; border:1px solid var(--line); color:var(--mut); padding:5px 14px; border-radius:20px; font-size:14px; } .chip.on{ background:var(--green); color:#04140a; border-color:var(--green); font-weight:600; }
+  .print{ cursor:pointer; border:1px solid var(--amber); color:var(--amber); padding:5px 14px; border-radius:20px; font-size:14px; background:transparent; }
+  main{ max-width:1200px; margin:0 auto; padding:20px 22px 60px; }
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-left:5px solid var(--ac,#46ff7a); border-radius:10px; padding:0 0 12px; overflow:hidden; display:flex; flex-direction:column; }
+  .card .band{ background:var(--ac,#46ff7a); color:#06120b; font-family:"VT323",monospace; font-size:14px; letter-spacing:2px; padding:3px 14px; font-weight:700; text-transform:uppercase; }
+  .card .nm{ font-family:"VT323",Consolas,monospace; color:var(--amber); font-size:21px; line-height:1.1; padding:11px 14px 8px; }
+  .card .sec{ padding:5px 14px; font-size:13.5px; line-height:1.45; }
+  .card .lbl{ display:block; color:var(--green); font-size:11px; letter-spacing:1.5px; font-weight:700; margin-bottom:2px; }
+  .card .eff{ background:#0a1510; border-top:1px solid var(--line); border-bottom:1px solid var(--line); margin-top:4px; }
+  .card .fl{ font-style:italic; color:#a9b6ab; font-size:12.5px; padding:9px 14px 2px; margin-top:auto; }
+  .foot{ color:var(--mut); font-size:12px; text-align:center; margin-top:30px; }
+  @media print{
+    header .chips,.print,.sub a{ display:none; } header{ position:static; border:none; }
+    body{ background:#fff; color:#111; } .grid{ grid-template-columns:repeat(2,1fr); gap:8px; }
+    .card{ background:#fff; border:1px solid #999; border-left:5px solid var(--ac); page-break-inside:avoid; break-inside:avoid; }
+    .card .nm{ color:#000; } .card .lbl{ color:#000; } .card .eff{ background:#f3f3f3; } .card .fl{ color:#444; } .brand,.brand b{ color:#000; }
+  }
+</style></head>
+<body>
+<header>
+  <div class="brand">ROBCO · <b>ÉTABLI ORBITAL</b> · CARTES DE RECETTES</div>
+  <div class="sub">Sentinel-7 · Fallout 2d20 · clique « Imprimer » pour les découper · <a href="portail.html">‹ Portail MJ</a></div>
+  <div class="chips" id="chips"></div>
+</header>
+<main>
+  <div class="grid" id="grid"></div>
+  <div class="foot">40 recettes · 4 établis · les composants rares ne se trouvent qu'en zones interdites.</div>
+</main>
+<script src="recipes-data.js"></script>
+<script>
+const R=window.RECIPES; /*0; */ void(0);
+const CATS={Armes:'#ff6a4a',Cuisine:'#46ff7a',Chems:'#cf7bd8',Survie:'#5db4ff'};
+const LBL={Armes:'Atelier · Armes',Cuisine:'Cuisine & Hydroponie',Chems:'Station chimique',Survie:'Combinaison & Survie'};
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const grid=document.getElementById('grid'), chips=document.getElementById('chips');
+let fil='Tous';
+function card(r){ return '<div class="card" style="--ac:'+CATS[r.cat]+'"><div class="band">'+LBL[r.cat]+'</div>'+
+  '<div class="nm">'+esc(r.name)+'</div>'+
+  '<div class="sec"><span class="lbl">Composants</span>'+esc(r.comp)+'</div>'+
+  '<div class="sec"><span class="lbl">Test</span>'+esc(r.test)+'</div>'+
+  '<div class="sec eff"><span class="lbl">Effet</span>'+esc(r.result)+'</div>'+
+  '<div class="fl">« '+esc(r.flavor)+' »</div></div>'; }
+function render(){ grid.innerHTML=R.filter(r=>fil==='Tous'||r.cat===fil).map(card).join(''); }
+function chip(id,label){ const c=document.createElement('div'); c.className='chip'+(id==='Tous'?' on':''); c.textContent=label;
+  c.onclick=()=>{ fil=id; document.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); c.classList.add('on'); render(); }; chips.appendChild(c); }
+chip('Tous','Tous ('+R.length+')'); Object.keys(LBL).forEach(k=>chip(k,LBL[k]));
+const pb=document.createElement('button'); pb.className='print'; pb.textContent='🖨 Imprimer / PDF'; pb.onclick=()=>window.print(); chips.appendChild(pb);
+render();
+(function(){ const l=document.createElement('link'); l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family=VT323&display=swap'; document.head.appendChild(l); })();
+</script>
+</body></html>

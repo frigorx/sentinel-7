@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL-7 · Bienvenue, citoyen — Livret du joueur</title>
+<style>
+  :root{ --bg:#0d1411; --panel:#13201a; --line:#23362c; --txt:#e7ede6; --mut:#94a39a; --green:#46ff7a; --amber:#ffb347; --paper:#efe7d0; }
+  *{ box-sizing:border-box; } body{ margin:0; background:var(--bg); color:var(--txt); font-family:Georgia,"Times New Roman",serif; line-height:1.65; }
+  .wrap{ max-width:820px; margin:0 auto; padding:0 22px 80px; }
+  .topbar{ position:sticky; top:0; background:#0d1411ee; border-bottom:1px solid var(--line); padding:10px 22px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; z-index:10; font-family:system-ui,sans-serif; }
+  .topbar .b{ font-family:"VT323",monospace; color:var(--green); font-size:22px; text-shadow:0 0 8px rgba(70,255,122,.4); } .topbar .b b{ color:var(--amber); }
+  .topbar a{ color:var(--mut); text-decoration:none; font-size:14px; } .topbar a:hover{ color:var(--green); } .topbar .sp{ flex:1; }
+  .hero{ text-align:center; padding:54px 20px 34px; }
+  .hero .k{ font-family:system-ui,sans-serif; letter-spacing:3px; color:var(--amber); font-size:15px; }
+  .hero h1{ font-family:"VT323",monospace; font-size:60px; margin:8px 0 4px; color:#fff; letter-spacing:1px; }
+  .hero .s{ color:var(--mut); font-size:19px; }
+  .rule{ height:2px; background:linear-gradient(90deg,transparent,var(--amber),transparent); margin:8px 0 0; }
+  h2{ font-family:system-ui,sans-serif; color:var(--amber); font-size:24px; margin:42px 0 12px; padding-bottom:6px; border-bottom:1px solid var(--line); }
+  h3{ font-family:system-ui,sans-serif; color:var(--green); font-size:18px; margin:22px 0 6px; }
+  p{ margin:0 0 14px; } .lead{ font-size:18px; }
+  .cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:14px; margin:8px 0 6px; }
+  .cell{ background:var(--panel); border:1px solid var(--line); border-left:4px solid var(--green); border-radius:8px; padding:12px 14px; font-family:system-ui,sans-serif; font-size:15px; }
+  .cell b{ color:var(--green); } .cell.amber{ border-left-color:var(--amber); } .cell.amber b{ color:var(--amber); }
+  .chronique{ background:var(--paper); color:#34301f; border-radius:8px; padding:22px 26px; margin:16px 0; box-shadow:0 0 0 1px #c9b98a inset; }
+  .chronique .seal{ text-align:center; font-family:system-ui,sans-serif; letter-spacing:2px; color:#7a5a1f; font-size:13px; border-bottom:1px solid #c9b98a; padding-bottom:8px; margin-bottom:12px; }
+  .chronique h4{ font-family:Georgia,serif; color:#5a3f12; margin:16px 0 4px; font-size:17px; }
+  .chronique p{ margin:0 0 10px; }
+  table.sp{ width:100%; border-collapse:collapse; font-family:system-ui,sans-serif; font-size:14.5px; margin:8px 0 6px; }
+  table.sp td{ border:1px solid var(--line); padding:8px 11px; vertical-align:top; } table.sp td.k{ background:#10201a; color:var(--green); font-weight:600; width:140px; }
+  .callout{ background:#171f17; border:1px solid var(--line); border-left:4px solid var(--amber); border-radius:8px; padding:12px 16px; font-family:system-ui,sans-serif; font-size:15px; margin:14px 0; }
+  .foot{ color:var(--mut); font-size:13px; text-align:center; margin-top:50px; font-family:system-ui,sans-serif; }
+  @media print{ .topbar{ display:none; } body{ background:#fff; color:#111; } .hero h1{ color:#111; } .cell,.callout{ background:#f3f3f3; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="b">ROBCO · <b>SENTINEL-7</b></span><span class="sp"></span>
+  <a href="index.html">‹ Accueil</a><a href="javascript:window.print()">Imprimer / PDF</a>
+</div>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="k">STATION ORBITALE · AN 2288</div>
+    <h1>BIENVENUE, CITOYEN</h1>
+    <div class="s">Livret d'orientation — service actif de Sentinel-7</div>
+    <div class="rule"></div>
+  </div>
+
+  <p class="lead">Ce livret est à lire par les joueurs. Il ne contient aucun secret : seulement ce que tout citoyen de la station est censé savoir. Le reste, vous le découvrirez par vous-mêmes — et c'est tout l'intérêt.</p>
+
+  <h2>1 · Où vous êtes</h2>
+  <p>Très loin au-dessus de la Terre dévastée par la Grande Guerre de 2077, six cents âmes vivent dans une station qui ronronne comme un vieux moteur. Les machines tournent. Les lumières s'allument. Les rations sont distribuées. Une voix paternelle — le <b>Conseiller Technique</b> — veille sur tout. On vous a appris que vous êtes les derniers gardiens de la civilisation, et qu'un jour vous redescendrez reconquérir le monde.</p>
+  <div class="cols">
+    <div class="cell"><b>Votre Pip-Boy</b><br>Bracelet-terminal : messages officiels, manuels, détecteur d'atmosphère. Indispensable.</div>
+    <div class="cell"><b>La capsule</b><br>La monnaie de la station, frappée du logo officiel. Une capsule ≈ une ration.</div>
+    <div class="cell amber"><b>Les Eyebots</b><br>Sphères volantes à l'œil rouge. Elles veillent, diffusent les annonces. « Signaler un comportement suspect est un devoir civique. »</div>
+    <div class="cell amber"><b>Le Programme de Retour</b><br>L'honneur suprême : être choisi pour redescendre préparer la Terre. La station s'y prépare depuis toujours.</div>
+  </div>
+
+  <h2>2 · La Chronique officielle</h2>
+  <p>Document approuvé par le Conseil de la Station, lecture obligatoire pour tout agent en service actif. C'est l'histoire telle qu'on vous l'enseigne.</p>
+  <div class="chronique">
+    <div class="seal">DÉPARTEMENT DE LA VÉRITÉ HISTORIQUE · « La station est plus stable qu'hier. Demain, elle le sera davantage. »</div>
+    <h4>La Fondation (2061)</h4>
+    <p>Le premier module fut lancé le 4 juillet 2061, sous l'égide de Vault-Tec et de RobCo. Module après module, la station devint une cité orbitale autosuffisante, destinée à assurer la continuité de la civilisation américaine si l'impensable survenait. L'impensable survint.</p>
+    <h4>L'Épreuve du Feu (2077–2089)</h4>
+    <p>Le 23 octobre 2077, la Grande Guerre embrasa la Terre. Sentinel-7 devint du jour au lendemain le dernier bastion de l'humanité civilisée. Sous le commandement du Colonel Morrison, la station tint bon, et repoussa même l'agression de la station chinoise Tiangong-9. Les survivants ennemis furent généreusement intégrés à notre communauté.</p>
+    <h4>L'Ordre et l'Âge d'Or (2105–2147)</h4>
+    <p>Une émeute du Secteur 7-B fut matée en 2105 ; le secteur, contaminé, fut scellé par sécurité — son accès demeure interdit. Puis vint le Directorat d'Elena Vasquez : une ère d'unité où anciens et nouveaux citoyens apprirent à ne former qu'un seul peuple, fier et soudé.</p>
+    <h4>Le Programme de Retour</h4>
+    <p>La Terre se régénère. Bientôt, l'humanité de Sentinel-7 redescendra reprendre ce qui lui appartient. Périodiquement, les citoyens les plus méritants sont choisis pour embarquer à bord des capsules de descente et préparer le terrain. Être sélectionné est le plus grand des honneurs.</p>
+    <h4>Votre place dans l'Histoire</h4>
+    <p>Vous n'êtes pas nés par hasard. Vous êtes le fruit de deux cents ans de sélection. Vos ancêtres ont survécu quand des milliards périssaient. Maintenir ce que vos aïeux ont construit, obéir aux règles qui nous ont gardés en vie, servir le bien commun : six cents vies en dépendent.</p>
+  </div>
+  <div class="callout">Voilà ce que vous croyez en commençant la partie. Jouez-le sincèrement. Le doute, lui, viendra tout seul.</div>
+
+  <h2>3 · Comment se joue cette campagne</h2>
+  <p>Cette campagne utilise le système <b>Fallout : le Jeu de Rôle (2d20)</b>. Pas besoin d'être un expert : votre Maître de Jeu (MJ) vous guide. Voici l'esprit de la table.</p>
+  <h3>Vous n'êtes pas des héros</h3>
+  <p>Vous incarnez des <b>citoyens ordinaires</b> de Sentinel-7 : un technicien, un ouvrier, un agent, un médecin… Des gens normaux, avec un quotidien, qui vont se retrouver, mission après mission, devant des choses qu'ils n'auraient jamais dû voir.</p>
+  <h3>Sur écran</h3>
+  <p>Le MJ vous montrera des <b>terminaux, des messages, des images</b> sur un écran, comme si vous consultiez les ordinateurs de la station. À vous de lire et de retenir ce qui compte.</p>
+  <h3>Des choix gris</h3>
+  <p>Ici, pas de gentils ni de méchants tout tracés. Les dilemmes sont moraux et difficiles ; vos décisions ont des <b>conséquences durables</b>, parfois plusieurs séances plus tard. On ne choisit pas toujours le bien — souvent, seulement le moindre mal.</p>
+  
+  <h2>4 · Votre personnage</h2>
+  <p>Vous créez un citoyen de Sentinel-7, de <b>niveau 1</b>. La feuille complète se fait avec votre MJ et le livre de règles Fallout 2d20 ; voici les grandes lignes.</p>
+  <table class="sp">
+    <tr><td class="k">S.P.E.C.I.A.L.</td><td>Sept attributs : <b>F</b>orce, <b>P</b>erception, <b>E</b>ndurance, <b>C</b>harisme, <b>I</b>ntelligence, <b>A</b>gilité, <b>C</b>hance. Ils définissent qui vous êtes.</td></tr>
+    <tr><td class="k">Compétences</td><td>Ce que vous savez faire : Armes légères, Réparation, Sciences, Médecine, Discours, Discrétion, Survie, Troc…</td></tr>
+    <tr><td class="k">Votre rôle à bord</td><td>Un métier qui vous ancre dans la station : technicien d'hydroponie, ouvrier de maintenance, agent de sécurité, médecin, archiviste, contrebandier discret…</td></tr>
+    <tr><td class="k">Équipement</td><td>Au départ, peu de chose : votre Pip-Boy, une tenue de travail, quelques capsules. Vous n'êtes pas armés jusqu'aux dents — vous improviserez.</td></tr>
+    <tr><td class="k">Pourquoi ensemble ?</td><td>On vous a assignés à la même équipe d'intervention. Au fil des missions, ce hasard deviendra un lien — peut-être le seul auquel vous pourrez vous fier.</td></tr>
+  </table>
+  <p>Pensez à <b>une raison de tenir</b> : une famille, une dette, un rêve de revoir le ciel. C'est ce qui rendra vos choix déchirants.</p>
+
+  <div class="hero" style="padding:40px 20px 10px">
+    <div class="rule"></div>
+    <p class="lead" style="margin-top:24px">Bienvenue à bord, citoyen. La station compte sur vous.</p>
+    <p style="color:var(--mut)">War. War never changes. Mais cette histoire, peut-être que si — et c'est vous qui l'écrirez.</p>
+  </div>
+
+  <div class="foot">Livret du joueur · sans spoiler · à partager librement avec votre table. Pour imprimer en PDF : bouton « Imprimer / PDF » en haut, ou Ctrl+P.</div>
+</div>
+<script>(function(){ const l=document.createElement('link'); l.rel='stylesheet'; l.href='https://fonts.googleapis.com/css2?family=VT323&display=swap'; document.head.appendChild(l); })();</script>
+</body>
+</html>

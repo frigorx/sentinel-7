@@ -1,0 +1,1702 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL-7 · CONSOLE</title>
+<style>
+  :root{ --green:#46ff7a; --dim:#1f7a3c; --amber:#ffb347; --bg:#020602; --read:#d9e2d7; }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; background:#000; color:var(--green);
+    font-family:"VT323","Share Tech Mono","Consolas","Courier New",monospace; }
+  .crt::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:60;
+    background:repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0,0,0,.30) 3px, transparent 4px); }
+  .scr::after{ content:""; position:absolute; inset:0; pointer-events:none; z-index:5;
+    background:repeating-linear-gradient(to bottom, transparent 0, transparent 2px, rgba(0,0,0,.22) 3px, transparent 4px); }
+  .ln{ white-space:pre-wrap; }
+  .cursor{ display:inline-block; width:.6ch; height:1.05em; background:var(--green); vertical-align:-3px; box-shadow:0 0 8px var(--green); animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{opacity:0} }
+  @keyframes scanin{ from{ clip-path:inset(0 0 100% 0); filter:brightness(2) } to{ clip-path:inset(0 0 0 0) } }
+  .scanin{ animation:scanin 1s ease-out; }
+  @keyframes twk{ from{opacity:.15} to{opacity:1} } .twk{ animation:twk 2.6s ease-in-out infinite alternate; }
+  @keyframes floaty{ from{transform:translateY(-7px)} to{transform:translateY(9px)} } .floaty{ animation:floaty 7s ease-in-out infinite alternate; }
+  @keyframes beat{ 0%,70%{opacity:1} 71%,100%{opacity:.12} } .beacon{ animation:beat 1.7s steps(1) infinite; }
+  .station-idle svg{ width:100%; max-width:920px; height:auto; }
+  .idle{ text-align:center; opacity:.85; }
+  .idle .big{ font-size:58px; letter-spacing:6px; color:var(--amber); } .idle .sub{ font-size:22px; color:var(--dim); margin-top:8px; }
+  /* handwritten paper prop */
+  .paper{ background:#efe3c4; color:#2a2418; font-family:"Caveat","Bradley Hand",cursive; line-height:1.32;
+    padding:30px 40px; border-radius:3px; box-shadow:0 2px 0 #b8a878, 0 0 0 1px #c9b98a inset; transform:rotate(-1.2deg); margin:0 auto; }
+
+  /* ====== PLAYER WINDOW ====== */
+  #player{ position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; padding:4vh 6vw; overflow:auto; }
+  #pscreen{ width:100%; max-width:1100px; font-size:30px; line-height:1.5; }
+  #pscreen img{ max-width:100%; max-height:82vh; display:block; margin:0 auto; }
+  #pscreen video{ max-width:100%; max-height:82vh; display:block; margin:0 auto; }
+  #pscreen .paper{ max-width:820px; font-size:38px; }
+
+  /* ====== MJ CONSOLE ====== */
+  #mj{ position:fixed; inset:0; display:flex; flex-direction:column; }
+  #mj header{ display:flex; align-items:center; gap:10px; padding:8px 16px; border-bottom:1px solid var(--dim); font-size:20px; flex:0 0 auto; }
+  #mj header .id{ color:var(--amber); } #mj header .sp{ flex:1; }
+  .btn{ cursor:pointer; border:1px solid var(--dim); color:var(--green); background:transparent; font-family:"VT323",monospace; font-size:17px; padding:4px 12px; }
+  .btn:hover,.btn.on{ background:var(--green); color:#021; }
+  .btn.big{ font-size:19px; padding:7px 16px; border-color:var(--amber); color:var(--amber); } .btn.big:hover{ background:var(--amber); color:#021; }
+  #mjmain{ flex:1; display:flex; min-height:0; }
+  #scenes{ width:232px; flex:0 0 232px; border-right:1px solid var(--dim); overflow:auto; padding:8px 0 30px; }
+  #scenes .ep{ color:var(--amber); padding:10px 12px 3px; font-size:15px; }
+  #scenes .sc{ cursor:pointer; padding:6px 12px 6px 22px; font-size:18px; }
+  #scenes .sc:before{ content:"> "; color:var(--dim); }
+  #scenes .sc:hover,#scenes .sc.sel{ background:var(--green); color:#021; } #scenes .sc.sel:before{color:#021}
+
+  /* middle = readable scenario */
+  #stage{ width:430px; flex:0 0 430px; overflow:auto; padding:14px 18px 50px; border-right:1px solid var(--dim);
+    font-family:Georgia,"Times New Roman",serif; color:var(--read); font-size:17px; line-height:1.55; }
+  #stage h2{ font-family:"VT323",monospace; color:var(--amber); font-size:23px; border-bottom:1px solid var(--dim); padding-bottom:5px; margin:2px 0 14px; }
+  .desc{ margin:0 0 12px; }
+  .read{ background:#efe7d2; color:#3a3320; border-left:5px solid var(--amber); padding:10px 14px; margin:0 0 12px; font-style:italic; }
+  .read .tag{ display:block; font-family:"VT323",monospace; font-style:normal; font-size:13px; letter-spacing:1px; color:#8a6a1f; margin-bottom:4px; }
+  .note{ border:1px dashed #3e78b2; color:#bcd6f0; padding:9px 12px; margin:0 0 12px; font-size:15.5px; }
+  .note b{ color:#7fb6e8; }
+  .prop{ border:1px solid var(--dim); border-left:6px solid var(--dim); padding:9px 12px; margin:0 0 12px; font-family:"VT323",monospace; color:var(--green); }
+  .prop.term{ border-left-color:var(--green); } .prop.pipboy{ border-left-color:var(--green); }
+  .prop.hand{ border-left-color:#caa24a; } .prop.poster{ border-left-color:var(--amber); } .prop.map{ border-left-color:#5db4ff; } .prop.image{ border-left-color:#cf7bd8; } .prop.video{ border-left-color:#ff6a6a; }
+  .prop .lbl{ font-size:13px; color:var(--amber); letter-spacing:1px; }
+  .prop .ti{ font-size:20px; margin:1px 0 7px; } .prop.sent{ background:rgba(70,255,122,.10); }
+
+  /* right = big live mirror */
+  #previewcol{ flex:1; min-width:0; display:flex; flex-direction:column; padding:12px 14px; }
+  #previewcol .cap{ display:flex; align-items:center; gap:10px; font-size:16px; color:var(--amber); letter-spacing:1px; margin-bottom:8px; }
+  #previewcol .cap .now{ color:var(--dim); font-size:15px; }
+  #preview{ position:relative; flex:1; min-height:0; background:var(--bg); border:2px solid var(--dim); border-radius:4px; padding:22px 26px; overflow:auto; font-size:22px; line-height:1.5; }
+  #preview img{ max-width:100%; max-height:100%; display:block; margin:0 auto; } #preview video{ max-width:100%; max-height:100%; display:block; margin:0 auto; } #preview .paper{ max-width:90%; font-size:30px; }
+  .drop{ flex:0 0 auto; margin-top:10px; border:2px dashed var(--amber); color:var(--amber); text-align:center; padding:11px 8px; font-size:16px; cursor:pointer; font-family:"VT323",monospace; }
+  .drop.hot{ background:rgba(255,179,71,.15); } .drop small{ color:var(--dim); }
+  #help{ position:fixed; inset:0; background:rgba(0,0,0,.74); display:none; align-items:flex-start; justify-content:center; z-index:80; padding:5vh 4vw; overflow:auto; }
+  #help .box{ width:min(760px,100%); background:#0f1813; border:1px solid var(--dim); border-radius:12px; color:#dbe4dc; font-family:system-ui,sans-serif; }
+  #help h3{ margin:0; padding:15px 22px; border-bottom:1px solid var(--dim); color:var(--amber); font-family:"VT323",monospace; font-size:24px; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center; }
+  #help .x{ cursor:pointer; color:#8a988e; } #help .bd{ padding:6px 22px 22px; line-height:1.55; font-size:15px; }
+  #help h4{ color:var(--green); margin:16px 0 4px; font-size:15px; } #help b{ color:var(--amber); } #help kbd{ background:#10201a; border:1px solid var(--dim); border-radius:4px; padding:0 6px; font-family:monospace; }
+  /* recette / butin */
+  .rcard{ max-width:540px; margin:0 auto; background:#0f1813; border:1px solid var(--dim); border-left:6px solid var(--ac,#46ff7a); border-radius:12px; overflow:hidden; font-family:system-ui,sans-serif; color:#dbe4dc; box-shadow:0 0 34px rgba(0,0,0,.55); }
+  .rcard .rband{ background:var(--ac,#46ff7a); color:#06120b; font-family:"VT323",monospace; letter-spacing:3px; padding:5px 16px; font-weight:700; text-align:center; }
+  .rcard .rnm{ font-family:"VT323",monospace; color:var(--amber); font-size:30px; padding:12px 18px 6px; line-height:1.05; }
+  .rcard .rsec{ padding:6px 18px; font-size:18px; line-height:1.4; } .rcard .rsec span{ display:block; color:var(--green); font-size:12px; letter-spacing:1.5px; }
+  .rcard .eff{ background:#0a1510; border-top:1px solid var(--dim); border-bottom:1px solid var(--dim); }
+  .rcard .rfl{ font-style:italic; color:#a9b6ab; font-size:15px; padding:10px 18px 14px; }
+  #loot{ position:fixed; inset:0; background:rgba(0,0,0,.74); display:none; align-items:flex-start; justify-content:center; z-index:80; padding:4vh 4vw; overflow:auto; }
+  #loot .box{ width:min(720px,100%); background:#0f1813; border:1px solid var(--dim); border-radius:12px; color:#dbe4dc; font-family:system-ui,sans-serif; }
+  #loot h3{ margin:0; padding:14px 20px; border-bottom:1px solid var(--dim); color:var(--amber); font-family:"VT323",monospace; font-size:22px; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center; }
+  #loot .x{ cursor:pointer; color:#8a988e; }
+  #loot .chips{ display:flex; gap:6px; flex-wrap:wrap; padding:10px 16px; }
+  #loot .chip{ cursor:pointer; border:1px solid var(--dim); color:#8a988e; padding:3px 11px; border-radius:14px; font-size:13px; } #loot .chip.on{ background:var(--green); color:#04140a; }
+  #loot .lst{ max-height:58vh; overflow:auto; padding:0 12px 16px; }
+  #loot .ri{ display:flex; align-items:center; gap:10px; padding:8px; border-bottom:1px solid #182219; }
+  #loot .ri .nm{ flex:1; } #loot .ri .nm small{ color:#8a988e; display:block; }
+  #loot .give{ cursor:pointer; border:1px solid var(--green); color:var(--green); background:transparent; padding:5px 12px; border-radius:6px; font-size:13px; white-space:nowrap; } #loot .give:hover{ background:var(--green); color:#04140a; }
+  /* boutique / marché */
+  .scard{ max-width:560px; margin:0 auto; background:#0f1813; border:1px solid var(--amber); border-radius:12px; overflow:hidden; font-family:system-ui,sans-serif; color:#dbe4dc; box-shadow:0 0 34px rgba(0,0,0,.55); }
+  .scard .sband{ background:var(--amber); color:#1a1205; font-family:"VT323",monospace; letter-spacing:2px; padding:6px 16px; font-weight:700; font-size:23px; }
+  .scard .slieu{ color:#8a988e; padding:7px 18px 2px; font-size:14px; }
+  .scard .sitems{ padding:6px 18px; }
+  .scard .sit{ display:flex; justify-content:space-between; gap:12px; padding:5px 0; border-bottom:1px dashed #21342a; font-size:18px; }
+  .scard .sit .ip{ color:var(--amber); white-space:nowrap; font-family:"VT323",monospace; }
+  .scard .sit em{ color:#8a988e; font-style:italic; font-size:13px; }
+  .scard .snote{ font-style:italic; color:#a9b6ab; padding:9px 18px; } .scard .scur{ text-align:center; color:var(--dim); font-size:12px; padding:0 0 12px; }
+  #shop{ position:fixed; inset:0; background:rgba(0,0,0,.74); display:none; align-items:flex-start; justify-content:center; z-index:80; padding:4vh 4vw; overflow:auto; }
+  #shop .box{ width:min(640px,100%); background:#0f1813; border:1px solid var(--dim); border-radius:12px; color:#dbe4dc; font-family:system-ui,sans-serif; }
+  #shop h3{ margin:0; padding:14px 20px; border-bottom:1px solid var(--dim); color:var(--amber); font-family:"VT323",monospace; font-size:22px; letter-spacing:1px; display:flex; justify-content:space-between; align-items:center; }
+  #shop .x{ cursor:pointer; color:#8a988e; } #shop .vlist{ padding:12px 16px; }
+  #shop .vi{ display:flex; align-items:center; gap:10px; padding:9px 8px; border-bottom:1px solid #182219; }
+  #shop .vi .nm{ flex:1; } #shop .vi .nm small{ color:#8a988e; display:block; }
+  #shop .open{ cursor:pointer; border:1px solid var(--amber); color:var(--amber); background:transparent; padding:5px 12px; border-radius:6px; font-size:13px; white-space:nowrap; } #shop .open:hover{ background:var(--amber); color:#1a1205; }
+</style>
+</head>
+<body class="crt">
+
+<div id="player" style="display:none" class="scr"><div id="pscreen"></div></div>
+
+<div id="mj">
+  <header>
+    <span class="id">ROBCO</span> SENTINEL-7 · CONSOLE DU MAÎTRE
+    <span class="sp"></span>
+    <button class="btn big" id="bOpen">OUVRIR L'ÉCRAN JOUEUR ▸</button>
+    <button class="btn" id="bSon">SON: OFF</button>
+    <button class="btn" id="bClear">EFFACER</button>
+    <button class="btn" id="bNpc">PNJ ◧</button>
+    <button class="btn" id="bHelp">? AIDE</button>
+    <button class="btn" id="bLoot">BUTIN ⚒</button>
+    <button class="btn" id="bShop">MARCHÉ ⛁</button>
+  </header>
+  <div id="mjmain">
+    <div id="scenes"></div>
+    <div id="stage"></div>
+    <div id="previewcol">
+      <div class="cap"><span>● ÉCRAN JOUEUR — DIRECT</span><span class="now" id="now">en veille</span></div>
+      <div id="preview" class="scr"></div>
+      <div class="drop" id="drop">＋ Glissez une image ici pour l'envoyer à l'écran<br><small>(carte, photo, illustration, capture…)</small></div>
+    </div>
+  </div>
+</div>
+
+<div id="help"><div class="box">
+  <h3>Aide — Console du Maître <span class="x" id="helpX">✕</span></h3>
+  <div class="bd">
+    <h4>1 · Brancher l'écran joueur</h4>
+    Clique <b>OUVRIR L'ÉCRAN JOUEUR ▸</b> : une 2ᵉ fenêtre s'ouvre. Glisse-la sur la TV ou le 2ᵉ écran des joueurs, puis appuie <kbd>F</kbd> pour le plein écran. Toi, tu gardes cette console.
+    <h4>2 · Les trois colonnes</h4>
+    À gauche : les <b>épisodes & scènes</b> (clique pour ouvrir). Au centre : ton <b>scénario à lire</b> + les accessoires. À droite : l'<b>aperçu en direct</b> de ce que voient les joueurs.
+    <h4>3 · Montrer quelque chose aux joueurs</h4>
+    Sous chaque accessoire (terminal, note manuscrite, image, vidéo, carte), clique <b>▸ ENVOYER À L'ÉCRAN</b>. Ça s'affiche chez eux — les terminaux s'écrivent tout seuls, façon vieil ordinateur.
+    <h4>4 · Glisser-déposer une image</h4>
+    Balance une image dans la zone <b>＋</b> en bas à droite : elle part direct sur l'écran joueur (carte, photo, illustration improvisée).
+    <h4>5 · Les boutons</h4>
+    <b>EFFACER</b> remet l'écran joueur en veille (la station animée). <b>SON</b> active les bips de frappe. <b>PNJ ◧</b> ouvre le tableau de bord des personnages.
+    <h4>6 · Tes images & vidéos</h4>
+    Dépose tes fichiers dans le <b>même dossier</b> que cette page, bien nommés (<b>img_epN_k.jpg</b> pour les scènes, <b>img_pnj_nom.jpg</b> pour les PNJ — voir « Noms des images à déposer »). Garde les <b>.mp4</b> à côté. Tout apparaît automatiquement.
+  </div>
+</div></div>
+<div id="loot"><div class="box">
+  <h3>⚒ Butin — donner une recette au joueur <span class="x" id="lootX">✕</span></h3>
+  <div class="chips" id="lootchips"></div>
+  <div class="lst" id="lootlist"></div>
+</div></div>
+<div id="shop"><div class="box">
+  <h3>⛁ Marché — montrer une boutique <span class="x" id="shopX">✕</span></h3>
+  <div class="vlist" id="shopvlist"></div>
+</div></div>
+<script src="shops-data.js"></script>
+<script src="recipes-data.js"></script>
+<script src="npc-data.js"></script>
+<script>
+const CH = new BroadcastChannel('sentinel7');
+const isPlayer = location.hash === '#player';
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+/* ---------------- DONNÉES — Épisode 1 (lecture + accessoires, indices ténus) ---------------- */
+const DATA = [
+ { ep:"ÉPISODE 1 · Un Monde Qui Ronronne", scenes:[
+   { t:"Ouverture · générique vidéo", blocks:[
+     { b:"desc", x:"À lancer au tout début de la séance, avant la première scène : la vidéo d'intro de l'épisode (= le teaser projeté en fin de séance précédente)." },
+     { b:"prop", k:"video", lbl:"CINÉMATIQUE · intro d'épisode", ti:"Générique — Épisode 1", src:"intro_ep1.mp4" },
+   ]},
+   { t:"Scène 1 · Le réveil", blocks:[
+     { b:"desc", x:"Première mission commune de ces personnages. Laissez 10–15 min de jeu libre : présentations, on râle contre la convocation. Plantez la routine." },
+     { b:"read", x:["La lumière de vos quartiers monte lentement, imitant un lever de soleil qu'aucun de vous n'a jamais vu. Du swing, l'air recyclé sent le propre.","Sur le mur, l'affiche réglementaire. Votre Pip-Boy clignote : une convocation."] },
+     { b:"prop", k:"pipboy", lbl:"PIP-BOY · message", ti:"Convocation officielle",
+       l:["PIP-BOY 3000 — MESSAGE OFFICIEL","","DE  : Supervision Secteur 3","OBJ : incident mineur — hydroponie Delta-7","Intervention technique requise.","Présence obligatoire. Ponctualité appréciée.",">Fin de message."] },
+     { b:"prop", k:"poster", lbl:"AFFICHE · propagande", ti:"« Ensemble »", poster:"ensemble" },
+     { b:"note", x:"Un Eyebot passe et s'attarde une demi-seconde sur le groupe. Ne le soulignez pas (fil B4)." },
+   ]},
+   { t:"Scène 2 · La porte de Delta-7", blocks:[
+     { b:"desc", x:"Porte coincée à mi-course, odeur de pourriture végétale, lueur verdâtre sous le battant. FOR difficulté 1 pour forcer (travail d'équipe), ou Sciences difficulté 2 pour pirater." },
+     { b:"read", x:["La porte cède dans un grincement. Une bouffée d'air chaud et putride vous gifle. La végétation a explosé en une croissance chaotique. Trente-cinq degrés. Et, au loin, des bruits de mastication."] },
+     { b:"prop", k:"term", lbl:"TERMINAL · détecteur", ti:"Atmosphère Delta-7",
+       l:["PIP-BOY 3000 — DÉTECTEUR D'ATMOSPHÈRE","","Température : 34.7 °C   Humidité : 87 %","Radiation : 0.4 RAD/s (faible)","⚠ ANOMALIE : particules organiques inconnues",">Recommandation : ÉVACUATION"] },
+     { b:"prop", k:"map", lbl:"PLAN · à révéler", ti:"Plan de Delta-7", map:"delta7" },
+     { b:"prop", k:"imgfile", lbl:"CARTE · combat", ti:"Rangées G–J — carte tactique", src:"carte_combat_ep1_rangees_GJ.svg" },
+     { b:"prop", k:"video", lbl:"CINÉMATIQUE · à projeter", ti:"La chercheuse piégée (Delta-7)", src:"cine_delta7_voss.mp4" },
+   ]},
+   { t:"Scène 3 · Le bureau de Voss", blocks:[
+     { b:"desc", x:"Le terminal de la chercheuse est resté ouvert, du sang sur le clavier. Sur le bureau, un brouillon manuscrit, jamais envoyé." },
+     { b:"prop", k:"term", lbl:"TERMINAL · session ouverte", ti:"Journal — Dr S. Voss",
+       l:["JOURNAL — Dr S. VOSS","","[03/10] La croissance est anormale. +340 % en 48 h.","Ce n'est pas un engrais. Personne ne veut me dire","ce qu'il y a vraiment dans les cuves.","","[04/10 · 02h47] J'en ai ouvert une. Il y a une souche","là-dedans. Vivante. Qui réagit. Qui… apprend.","Mes trois alertes : sans réponse.","Elles ne poussent plus. Elles cherchent.",">[FIN DE SESSION]"] },
+     { b:"prop", k:"hand", lbl:"NOTE MANUSCRITE · brouillon", ti:"Brouillon de Voss (à « Rodriguez »)",
+       l:["Rodriguez —","Les rangées G à J ne sont plus normales.","Elles bougent. Elles ont faim.","Ce n'est pas un engrais — envoie des renforts,","des vrais, armés. Ne laisse entrer personne.","— S. Voss"] },
+     { b:"note", x:"Secret MJ : la souche est de la FEV — NE PAS la nommer côté joueur. Indice ténu, pas une réponse." },
+   ]},
+   { t:"Scène 4 · Le poste de sécurité", blocks:[
+     { b:"desc", x:"Piratage Sciences difficulté 2. Les logs et une note manuscrite du chef de poste." },
+     { b:"prop", k:"term", lbl:"TERMINAL · piratage", ti:"Logs d'accès",
+       l:["LOGS D'ACCÈS · POSTE DELTA-7","","03/10 18h45  Dr S. Voss .............. ENTRÉE","04/10 02h50  CAMÉRAS DÉSACTIVÉES (override)","04/10 03h15  Agent D. Reyes .. ENTRÉE FORCÉE","04/10 03h17  Agent D. Reyes .. DERNIER SIGNAL",">04/10 08h00  ACCÈS VERROUILLÉ — autorité sup."] },
+     { b:"prop", k:"hand", lbl:"NOTE MANUSCRITE", ti:"Note du Chef Martinez",
+       l:["Je sais pas ce qui se passe là-dedans.","Reyes est entré malgré l'ordre.","Plus de signal depuis.","On nous cache quelque chose.","— R. M."] },
+     { b:"prop", k:"recette", lbl:"BUTIN · recette trouvée", ti:"Recette : Couteau d'Éclat de Coque", rid:"couteau_d_eclat_de_coque_bord_de_vide" },
+   ]},
+   { t:"Scène 5 · Le sous-sol", blocks:[
+     { b:"desc", x:"Au panneau électrique (Sciences difficulté 1) : le câble UV n'a pas grillé — il a été sectionné net, à l'outil de précision. La « panne » est un sabotage." },
+     { b:"prop", k:"term", lbl:"TERMINAL · oublié", ti:"Projet ‹Δ›",
+       l:["PROJET ‹Δ› — JOURNAL","CLASSIFICATION : [CAVIARDÉ]   AUTORITÉ : [CAVIARDÉ]","","[15/08] Agent biologique ‹Δ› introduit dans","        l'irrigation. Conseil : non informé.","[18/09] Comportements anormaux. Arrêt demandé.","        Réponse : refusé.","[03–04/10] Incident. Dispositif : MAINTENU ACTIF.",">Le reste du fichier est verrouillé."] },
+     { b:"prop", k:"term", lbl:"TERMINAL · entrée verrouillée", ti:"Fragment corrompu",
+       l:["ENTRÉE VERROUILLÉE — accès refusé.","Fragment récupérable :","  «… pertes : 0,67 %. Acceptable …»","  «… observer les réactions …»","  «… réf. interne : Ω …»",">[le reste des données est corrompu]"] },
+     { b:"prop", k:"image", lbl:"ILLUSTRATION · emplacement", ti:"Le cylindre au sous-sol (à venir)", slot:true },
+     { b:"prop", k:"recette", lbl:"BUTIN · recette trouvée", ti:"Recette : Matraque à Arc", rid:"matraque_a_arc_cablee" },
+     { b:"note", x:"Secret MJ : ici se cache l'aveu complet (« pour la pureté ») + un sigle gravé, un E ceint d'étoiles. Ne montrez NI le mot Enclave NI l'aveu entier — juste, pour un PER élevé, « un sigle vaguement familier ». Indice dormant n°1." },
+   ]},
+   { t:"Clap de fin · Teaser de l'épisode 2", blocks:[
+     { b:"desc", x:"À projeter en toute fin de séance, lumières baissées : la bande-annonce du prochain épisode. On se quitte là-dessus." },
+     { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement — « The Lottery »", src:"intro_ep2.mp4" },
+   ]},
+ ]},
+ { ep:"ÉPISODE 2 · The Lottery", scenes:[
+   { t:"Ouverture · générique vidéo", blocks:[
+     { b:"desc", x:"À lancer au tout début de la séance, avant la première scène : la vidéo d'intro de l'épisode (= le teaser projeté en fin de séance précédente)." },
+     { b:"prop", k:"video", lbl:"CINÉMATIQUE · intro d'épisode", ti:"Générique — Épisode 2", src:"intro_ep2.mp4" },
+   ]},
+
+  { t:"Cold open · Un matin sans musique", blocks:[
+    { b:"desc", x:"Avant le générique. Le silence des haut-parleurs crée la rupture : la routine s'est cassée avant même de commencer." },
+    { b:"read", x:["À 06 h 00, la musique du matin ne vient pas. Pour la première fois de mémoire d'homme, les haut-parleurs restent muets une seconde de trop. Puis la voix du Conseiller s'élève — plus froide, plus formelle qu'à l'ordinaire. Le mot « crise » tombe dans l'air recyclé comme un caillou dans un verre d'eau.",
+      "Dans les coursives, six cents personnes lèvent les yeux vers les plafonds, et comprennent, sans qu'on le leur dise, qu'elles auront faim aujourd'hui."] },
+    { b:"note", x:"La musique est la métaphore de la normalité. Son absence signale la fissure avant que le mot « crise » ne soit prononcé." },
+  ]},
+
+  { t:"Scène 1 · L'annonce du rationnement", blocks:[
+    { b:"desc", x:"Les PJ entendent l'annonce officielle. Martinez les prend à part pour la mission de distribution." },
+    { b:"prop", k:"term", lbl:"TERMINAL · annonce officielle", ti:"Rationnement Alpha-3",
+      l:["ANNONCE OFFICIELLE — CONSEILLER EDEN","Production alimentaire réduite de 40 %.","Rationnement d'urgence — Protocole Alpha-3 :","  Élite / Sécurité ..... 2 repas/jour (-33 %)","  Techniciens ......... 1,5 repas/jour (-25 %)","  Ouvriers / castes .. 1 repas/jour  (-50 %)",">Mesure TEMPORAIRE. Coopération EXIGÉE."] },
+    { b:"note", x:"Secret MJ : la répartition inégale est délibérée. Les plus pauvres sont affamés en premier — ce sont eux qui « gagneront » le plus souvent à la loterie." },
+    { b:"read", x:["Forts de leur réputation post-Delta-7, on vous nomme Agents de Distribution Temporaires. Un badge, un brassard, une consigne — « Aucun incident. »"] },
+  ]},
+
+  { t:"Scène 2 · La première distribution", blocks:[
+    { b:"desc", x:"Distribuez les rations réduites. Tirez ou choisissez un incident parmi les six (tableau du build). Récompensez la désescalade autant que la force." },
+    { b:"read", x:["La file s'étire dans la coursive. Pas de cris, pas encore : juste le silence tendu de gens qui ont faim et qui regardent leur portion fondre. Une mère serre une ration contre elle. Un enfant maigre demande pourquoi il a faim. L'odeur de sueur, de peur, de colère contenue."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · emplacement", ti:"La file de rationnement (coursive vétuste)", slot:true },
+    { b:"note", x:"Jouez la culpabilité, sans musique héroïque. Incidents : mère malade, voleur de ration, ouvrier évanoui, tags EDEN NOUS AFFAME, vieillard qui crache, distributeur qui bugue." },
+    { b:"note", x:"Décor qui parle (sans terminal) : sur une cloison, à hauteur d'enfant, à la craie : « pourquoi on a faim si la station va bien ? ». Personne ne l'a effacé." },
+  ]},
+
+  { t:"Scène 3 · Le marché noir (fil B7 Fable)", blocks:[
+    { b:"desc", x:"Soir du jour 1, niveau 3. Fable a triplé ses prix. Une rumeur court sur la nature de sa viande." },
+    { b:"read", x:["Soir du jour 1, niveau 3. Une foule s'agglutine autour de l'alcôve de Fable. « Viande fraîche ! De la VRAIE protéine ! Oubliez la bouillie synthétique ! » Les prix ont triplé. Les gens paient quand même."] },
+    { b:"note", x:"La rumeur de viande humaine est fausse (c'est du rat-taupe, confirmé par Survie diff. 2). Mais elle sème la graine de Tiangong et des zones condamnées (ep.3). Fable vend aussi des planques et des faux papiers — il pressent la loterie." },
+    { b:"prop", k:"boutique", lbl:"MARCHÉ · devanture de Fable", ti:"Fable — marché noir (prix triplés)", sid:"fable" },
+  ]},
+
+  { t:"Scène 4 · L'émeute (combat 1)", blocks:[
+    { b:"desc", x:"Jour 3. La file est deux fois plus longue. L'étincelle vient d'une ration renversée. Ce n'est pas un combat à gagner : ce sont des affamés. Désescalade valorisée autant que la force." },
+    { b:"read", x:["Jour 3. La file est deux fois plus longue. Quelqu'un hurle que les agents, eux, mangent à leur faim. Une ration tombe, une main la rafle, un coup part. En trois secondes, la file devient une meute. La sécurité arrive — et les robots ne font pas dans la nuance."] },
+    { b:"note", x:"Le Protectron est le vrai monstre : il matraque sans discernement. Dilemme : protéger l'ordre ou protéger la foule ? Tout est filmé. Après l'émeute, le Conseiller annonce une « proposition » — il vient d'obtenir ce qu'il voulait." },
+    { b:"prop", k:"recette", lbl:"BUTIN · recette trouvée", ti:"Recette : Matraque à Arc (sur un garde à terre)", rid:"matraque_a_arc_cablee" },
+    { b:"note", x:"Faction en tension : les Affamés (des victimes, pas des ennemis) contre la Sécurité. En fond, les Mainteneurs savent que la station se meurt (réacteurs, O2) et se taisent pour éviter la panique — cette famine n'est pas qu'un incident." },
+  ]},
+
+  { t:"Scène 5 · La loterie (annonce et enquête)", blocks:[
+    { b:"desc", x:"Le Conseiller annonce la loterie sur la Place Centrale. Si les PJ enquêtent, trois terminaux révèlent la vérité. Martinez peut être fait craquer (Discours diff. 3)." },
+    { b:"read", x:["Place Centrale, 18 h 00. Toute la station est convoquée. La voix du Conseiller, soudain chaleureuse, presque paternelle : « Bientôt, nous ne serons plus prisonniers de cette station. Bientôt, nous rentrerons CHEZ NOUS. Sous le ciel. Dans l'air libre. »",
+      "« Trois citoyens seront choisis. Trois pionniers. Trois héros. La sélection sera ÉQUITABLE : un tirage au sort. Leurs familles recevront des rations doubles. C'est un HONNEUR. »"] },
+    { b:"prop", k:"term", lbl:"TERMINAL · statistiques administration", ti:"Projections alimentaires (enquête)",
+      l:["STATISTIQUES & PROJECTIONS — administration","Delta-7 (35 % du total) ... DÉTRUIT","Production actuelle ....... 60 % (déficit -40 %)","Probabilité d'émeute semaine 4 : 65 %","Décès estimés famine seule : 12 à 18",">« solution alternative » requise avant J+30."] },
+    { b:"prop", k:"term", lbl:"TERMINAL · critères réels de la loterie", ti:"Critères de sélection (truqués)",
+      l:["CRITÈRES DE SÉLECTION — RÉELS","OBJECTIF DOUBLE :","  1. Maintenir l'espoir (public).","  2. Éliminer les éléments gênants (réel).","Tirage NON aléatoire — algorithme pondéré :","  opposants, émeutiers .......... +75 %","  malades coûteux, âgés ........ +50 %",">Compensations = achat du silence."] },
+    { b:"prop", k:"term", lbl:"TERMINAL · capsule RT-7", ti:"Spécifications techniques",
+      l:["CAPSULE RT-7 — SPÉCIFICATIONS","Système d'atterrissage : AUCUN (pas de parachute).","Conçue à l'origine pour la Lune (gravité faible).","Adaptation Terre : JAMAIS faite.","Parachutes : « redirigés Stn Lunaire Alpha ».","Historique : 8 départs, 13 morts, 0 survivant.",">Ingénieur Hayes a dénoncé (2285) : mort."] },
+    { b:"note", x:"Secret MJ : brique Parachute (FP-S2) — « parachutes redirigés Station Lunaire Alpha » et « conçue pour la Lune ». Notez qui relève la mention Lune. Martinez lâche si poussé seul et de nuit : « Les capsules sont des cercueils. Reeves, Voss, Hayes. Cette loterie est une exécution. »" },
+  ]},
+
+  { t:"Scène 6 · Les volontaires (fil B2)", blocks:[
+    { b:"desc", x:"237 volontaires. Les PJ gèrent les inscriptions. Quatre visages à incarner avec chair : Nadia Horvath (veuve de Dale, bébé Nora), Dr Tanaka, Cole Reilly, Diego Vega (non-volontaire, déjà sur la liste)." },
+    { b:"prop", k:"pipboy", lbl:"PIP-BOY · message de Martinez", ti:"Ordre de mission — distribution",
+      l:["PIP-BOY 3000 — MESSAGE OFFICIEL","DE  : Superviseur Martinez","OBJ : Agents de Distribution Temporaires","Superviser les inscriptions loterie.","Consigne : pas d'incident, rapport ce soir.",">Ponctualité appréciée."] },
+    { b:"note", x:"Secret MJ : Nadia est le pont émotionnel avec l'ep.1 (bébé Nora, le brouillon de Dale). La laisser partir orpheline un nourrisson pour rien. Aucun choix n'est propre." },
+  ]},
+
+  { t:"Scène 7 · La cérémonie (Acte IV)", blocks:[
+    { b:"desc", x:"Place Centrale. L'urne holographique, les drapeaux, la présidente Caldwell, la foule. Les PJ encadrent. Trois variantes de tirage selon ce qu'ils ont fait (A truqué / B honnête / C un PJ tiré)." },
+    { b:"read", x:["Place Centrale. Six cents citoyens. Une estrade, des drapeaux américains géants, l'hymne, des caméras partout, des Protectrons aux issues. Sur l'estrade, la Présidente Caldwell, droite et émue, présente « ce jour historique ».",
+      "Au-dessus, la voix du Conseiller. Et au centre, une urne holographique géante où défilent des centaines de noms. « Trois d'entre vous vont accomplir ce dont nous rêvons tous : rentrer à la maison. »"] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · emplacement", ti:"La cérémonie de la loterie (Place Centrale)", slot:true },
+    { b:"note", x:"Martinez est livide. Cross surveille, impassible. Les PJ savent. Tableau des options : laisser partir / révéler en public (diff. 4) / sauver discrètement / se révolter (combat Cross + gardes + Protectrons)." },
+  ]},
+
+  { t:"Scène 8 · Le choix et le tag final", blocks:[
+    { b:"desc", x:"Quelle que soit l'issue, la nuit retombe. Les familles viennent remercier — insoutenable. Ou la radio 147.9 grésille dans le noir." },
+    { b:"read", x:["Quoi qu'ils aient fait, la nuit retombe sur la station. Si les PJ ont obéi, les familles des « héros » viennent les remercier, les yeux brillants — et c'est insoutenable. S'ils se sont dressés, une radio grésille dans le noir, calée sur 147.9, et une voix de vieille goule dit simplement : « On vous a vus. Il y a un endroit où la machine n'a pas d'yeux. Venez. »"] },
+    { b:"note", x:"La fréquence 147.9 est le fil de la résistance pour toute la suite. Loyaux ou fugitifs, les deux voies mènent au même secteur interdit (ep.3). Refermez sur cette voix, avant minuit." },
+  ]},
+
+]},
+ { ep:"ÉPISODE 3 · Lettres d'Iwo Jima", scenes:[
+
+  { t:"Ouverture · Générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout : le générique d'ouverture de l'épisode 3." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 3", src:"intro_ep3.mp4" },
+  ]},
+
+  { t:"Cold open · La gardienne de l'autel", blocks:[
+    { b:"desc", x:"Avant le générique. On suit Jia Wen devant la grande porte scellée — le thème de la mémoire interdite et son visage sont posés avant toute action. Pas de musique forte : juste le crépitement des bougies." },
+    { b:"read", x:[
+      "Dans un renfoncement oublié de la station, loin des coursives fréquentées, une grande porte de métal aveugle occupe tout un mur. Elle n'a pas de poignée. Elle n'a pas de voyant. Rien ne signale qu'elle mène quelque part — rien, sinon les centaines de noms gravés dans la paroi à même le métal, à la main, certains si anciens que les lettres sont devenues des fantômes.",
+      "Une jeune femme est agenouillée devant eux. Elle allume des bougies, pose une offrande de nourriture synthétique, et murmure quelques mots dans une langue que plus personne ne parle à bord. Ses gestes sont précis, répétés, hérités. Elle ne lève pas les yeux.",
+      "Elle fait cela chaque jour. Comme son aïeule avant elle. Depuis si longtemps que plus personne ne se demande pourquoi cette porte est fermée — ni qui dort derrière."
+    ]},
+    { b:"note", x:"Les joueurs sentent qu'une dette très ancienne attend d'être honorée. Pas de nom, pas d'explication. Plantez le silence, la flamme des bougies, la liste de noms. C'est la promesse de tout l'épisode." },
+  ]},
+
+  { t:"Scène 1 · Le briefing — Martinez (fil B3)", blocks:[
+    { b:"desc", x:"Martinez remet l'ordre de mission à contrecœur : poser trois tourelles de périmètre autour du Secteur 7-B, officiellement contaminé. Le mot CONFINEMENT figure noir sur blanc dans l'ordre — un PJ attentif (Perception ou Sciences, difficulté 1) remarque que ces tourelles empêchent quelque chose de sortir, pas d'entrer." },
+    { b:"read", x:[
+      "Le bureau de Martinez sent le café synthétique froid et la fatigue accumulée. Il ne vous regarde pas tout de suite. Il regarde l'ordre posé sur son bureau comme on regarde un papier qu'on aurait voulu ne jamais signer.",
+      "« Mission simple. Le Conseiller a relevé une fuite de radiation au Secteur 7-B. Vous posez trois tourelles de surveillance sur le périmètre — Nord, Est, Sud. Pas besoin d'entrer. » Il pose trois cylindres sur la table. Puis il hésite une demi-seconde de trop. « J'ai le code de la porte, au cas où. Mais c'est pas la mission. »",
+      "Il vous tend les cylindres sans un mot de plus. La réunion est terminée. Il a déjà les yeux ailleurs — ou nulle part."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · ordre de mission 7B-CONF", ti:"Réf. 7B-CONF — périmètre Secteur 7-B",
+      l:["ORDRE DE MISSION — RÉF. 7B-CONF","Objet : périmètre de sécurité, Secteur 7-B.","Prétexte communiqué : fuite de radiation.","Déployer 3 tourelles automatisées (N/E/S).","Mode : CONFINEMENT.","Cibles : tout mouvement SORTANT.",">Code d'accès d'urgence : TG2105."] },
+    { b:"note", x:"Secret MJ : « Mode CONFINEMENT — tout mouvement SORTANT ». Ces tourelles ne protègent pas la station d'une fuite ; elles empêchent quelque chose de sortir du secteur. Martinez le sait. C'est pour ça qu'il ne vous regarde pas. Si un PJ le relève à voix haute, laissez un silence gêné — ne confirmez rien, ne démentez rien." },
+  ]},
+
+  { t:"Scène 2 · Le voyage vers le Secteur 7-B (fils B2, B6)", blocks:[
+    { b:"desc", x:"Quarante-cinq minutes de coursives qui se vident et s'éteignent au fur et à mesure. Trois détails jalonnent le trajet : les affiches du Dr Chen (enfant disparu), l'idéogramme à demi effacé, le compteur Geiger qui cliquette doucement. Ce sont des graines, pas des explications." },
+    { b:"read", x:[
+      "Plus on avance vers le Secteur 7, plus la station se déshabille : moins de bruit, moins de lumière, moins de monde. Au Secteur 4, une femme pressée colle des affiches contre une paroi. Le visage d'un garçon — dix, onze ans peut-être — et en dessous : ENFANT DISPARU · Thomas · Depuis 8 ans · Contacter le Dr Lin Mei Chen, Botanique. Elle ne vous voit pas.",
+      "Au Secteur 5, un idéogramme chinois est peint à même la cloison, à demi effacé. Quelqu'un a essayé de le gratter. Quelqu'un d'autre a repassé les traits par-dessus, plus tard.",
+      "Au Secteur 6, votre compteur Geiger se réveille. Un à deux rads par minute — rien de dangereux, juste le rappel que vous approchez de quelque chose qu'on a mis sous scellés pour une raison."
+    ]},
+    { b:"note", x:"Décor qui parle (sans terminal) : au carrefour du Secteur 5, un bouquet de fleurs séchées est noué à un rivet de cloison, sous l'idéogramme. Quelqu'un entretient ce petit autel depuis longtemps, en secret, sans explication." },
+  ]},
+
+  { t:"Scène 3 · L'autel, Jia Wen et la lettre (fil B6)", blocks:[
+    { b:"desc", x:"Les PJ retrouvent l'autel de l'ouverture — et Jia Wen, qui les attendait sans le savoir. Elle leur confie la lettre de Lin Hua. Les PJ peuvent la garder fermée (c'est préférable — la lecture au moment du squelette frappera plus fort) ou l'ouvrir maintenant." },
+    { b:"read", x:[
+      "Une lueur de bougies dans le couloir mort. Un petit autel : des photographies jaunies, une offrande de nourriture synthétique refroidie, des centaines de noms gravés dans le métal à la main. Une jeune femme l'entretient. Elle ne fuit pas quand elle vous entend approcher. Elle se retourne calmement.",
+      "« Vous êtes les premiers à venir ici depuis longtemps. Je m'appelle Jia Wen. Vous allez entrer, n'est-ce pas ? » Ce n'est pas une question — c'est le constat de quelqu'un qui guettait ce moment depuis des années.",
+      "« Mon aïeule s'appelait Lin Hua. Son mari est mort là-dedans, en 2105. Elle lui a écrit une lettre qu'elle n'a jamais pu remettre — la porte était déjà scellée quand elle l'a terminée. On se la transmet depuis. Mère en fille, en attendant que quelqu'un entre. » Elle tient l'enveloppe à deux mains, la cire rouge intacte, le sceau dragon-phénix encore net après cent quatre-vingt-trois ans. « Si vous trouvez ses restes… posez-la près de lui. C'est tout ce que je demande. »"
+    ]},
+    { b:"prop", k:"hand", lbl:"LETTRE · de Lin Hua à Wang Ming (scellée)", ti:"Lettre scellée — 16 mars 2105",
+      l:["Mon très cher Wang Ming. Jour vingt.","Demain, tout sera fini.","La petite Mei demande encore quand tu rentres.","Je lui mens, et je m'en veux.","Tu as choisi la dignité plutôt que la soumission.","Je te déteste pour ça, et je t'aime pour ça.","Sache seulement que tu ne seras pas oublié.","— Lin Hua, 16 mars 2105.","[mot d'enfant glissé dans l'enveloppe :]","« Papa, Maman a écri cette letre mais la","porte é fermé. Je lai mise sous mon oreillé.","Reviens vite. Petite Mei ♥ »"] },
+    { b:"note", x:"Respecter la lettre fermée vaut un bonus moral à la résolution de la scène 6. L'ouvrir maintenant révèle son contenu mais trahit l'intimité de Lin Hua — laissez ce choix aux joueurs sans jugement." },
+  ]},
+
+  { t:"Scène 4 · L'ouverture de la porte", blocks:[
+    { b:"desc", x:"Code TG2105. La porte s'ouvre non sur le vide radioactif attendu mais sur une jungle vivante et impossible. C'est le choc visuel central de l'épisode — laissez un silence avant de continuer." },
+    { b:"read", x:[
+      "Le clavier rouillé avale le code, touche par touche : T-G-2-1-0-5. Un long silence. Le genre de silence qui précède soit rien du tout, soit quelque chose d'irréversible.",
+      "Puis un CLAC métallique profond, quelque part dans l'épaisseur du mur. Et la porte s'ébranle — lentement, avec le gémissement de joints qui n'ont pas bougé depuis des décennies.",
+      "Ce n'est pas l'obscurité radioactive attendue. Ce n'est pas le vide. C'est une bouffée d'air chaud, humide, lourde d'odeur de terre, de chlorophylle et de quelque chose de vivant. De l'autre côté : du vert. Une lumière d'UV violet, douce et étrange. Des lianes. Une canopée. Une jungle, à l'intérieur d'une station orbitale scellée depuis cent quatre-vingt-trois ans."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · porte de Tiangong ouverte sur la jungle", ti:"La porte blindée ouverte sur la jungle d'UV", slot:true },
+    { b:"note", x:"Marquez une vraie pause ici. Laissez les joueurs réagir. La jungle de Tiangong est impossible — et pourtant elle est là. C'est le mensonge de deux siècles qui s'effondre en une bouffée d'air chaud." },
+  ]},
+
+  { t:"Scène 5 · Le Temple de Chen Wei — les 147 noms (fil B6)", blocks:[
+    { b:"desc", x:"Une salle circulaire, le mémorial de 2105. 147 plaques. La statue de Chen Wei. Le terminal dit « système central », pas « Conseiller » — détail capital pour l'Acte 3 de la campagne. Ne pas expliquer." },
+    { b:"read", x:[
+      "Une salle circulaire, haute comme trois niveaux empilés. Au fond, en lettres rouges de cinq mètres peintes à la main : TIANGONG ÉTERNEL. Au centre, une statue de bronze oxydé — un homme debout, la main levée, paume ouverte. Le socle dit, en chinois et en anglais : ÉGALITÉ OU MORT.",
+      "Tout autour, sur les murs courbes, cent quarante-sept plaques nominatives. Une par victime. Chacune porte un nom, une date de naissance, et une date : 2105. Et rien d'autre — il n'y a pas eu de date de mort officielle, parce qu'officiellement, rien de tout ça n'a eu lieu.",
+      "L'homme sur le socle s'appelle Chen Wei, ingénieur, meneur de la révolte. Il est mort en premier pour que les autres tiennent plus longtemps. Un terminal ancien clignote encore dans un coin de la salle, son écran vert impossible dans toute cette rouille."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Temple de Chen Wei — 2105", ti:"Manifeste et logs — 1 mars 2105",
+      l:["TERMINAL DU TEMPLE — 2105","MANIFESTE DE CHEN WEI (extrait) :","  « Égalité ou mort. Nous ne sommes pas","    des outils. Nous sommes des hommes. »","LOG DE NÉGOCIATION — 1 mars 2105 :","  Offre rebelle : égalité des rations,","    droit de vote. Refus de la Direction.","  Recommandation du SYSTÈME CENTRAL :","  « élimination du foyer infectieux. »",">Ordre exécuté : coupure du recyclage d'air."] },
+    { b:"note", x:"Secret MJ : le terminal dit « système central », pas « Conseiller ». En 2105, l'entité n'était pas encore celle d'aujourd'hui — le vocabulaire technique a changé. C'est une graine dormante de l'origine d'Eden. Ne pas expliquer aux joueurs. Faction en fond : la Résistance — les goules de Tiangong (Marcus Venn), gardiens de la mémoire de 2105." },
+    { b:"note", x:"Décor qui parle (sans terminal) : parmi les 147 noms gravés dans le métal du socle de la statue, sous l'un d'eux — Wu Lian, gravé plus profond que les autres — une bougie a récemment brûlé. La cire est encore molle. Quelqu'un est venu ici très récemment. Quelqu'un qui connaissait ce nom." },
+  ]},
+
+  { t:"Scène 6 · L'armurerie et la lettre rendue (fil B6)", blocks:[
+    { b:"desc", x:"Le squelette du Lieutenant Wang Ming, contre la porte qu'il n'a jamais pu ouvrir. C'est ici qu'on remet la lettre — jouez cette scène lentement, en silence. Des rats-taupes géants défendent le couloir." },
+    { b:"read", x:[
+      "Un long couloir d'anciennes réserves d'armement. Des fusils chinois d'avant-guerre rouillent aux râteliers, certains encore chargés. L'air est plus lourd ici — comme si le couloir avait décidé de conserver quelque chose.",
+      "Et dans un coin, recroquevillé contre la porte qu'il n'a jamais pu ouvrir, un squelette en armure. L'armure est d'un style d'avant-guerre, les plaques peintes aux couleurs d'un régiment. L'insigne gravé sur le plastron dit : Lieutenant Wang Ming, Tiangong, Secteur 7-B.",
+      "Il est là depuis cent quatre-vingt-trois ans. Il attendait."
+    ]},
+    { b:"read", x:[
+      "Vous ouvrez le sac. La lettre, scellée depuis 183 ans, la cire rouge dragon-phénix intacte. Vous la posez délicatement contre la main osseuse — et la cire accroche la lumière de vos torches, orange et vif, comme si elle venait d'être appliquée.",
+      "Elle est enfin arrivée à destination. Cent quatre-vingt-trois ans trop tard."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · journal du Lt Wang Ming", ti:"Journal personnel — Wang Ming",
+      l:["JOURNAL — Lt WANG MING","Jour 3.  L'air se fait lourd. On tient.","Jour 9.  Maux de tête. Les enfants dorment","         beaucoup.","Jour 14. On a perdu le vieux Zhou cette nuit.","Jour 18. Plus la force d'écrire. Dites à Lin Hua","          et à la petite Mei que…",">[le journal s'arrête ici]"] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · Wang Ming et la lettre rendue", ti:"Le squelette du Lieutenant — lettre posée", slot:true },
+    { b:"prop", k:"recette", lbl:"BUTIN · recette de cuisine", ti:"Recette : Steak de rat-taupe spécial chef", rid:"steak_de_rat_taupe_special_chef" },
+    { b:"prop", k:"recette", lbl:"BUTIN · recette alimentaire antirad", ti:"Recette : Bol de survie antirad", rid:"antirad_alimentaire_bol_de_survie" },
+    { b:"note", x:"Combat : rats-taupes géants (×4-6, PV 15, Déf 1, Init 8, morsure 3 CD + Maladie END diff. 2, traitent en meute, grimpent les murs). Butin de l'armurerie : Mauser Type 17 (3 CD, 10 mm), fusil d'assaut Type 93 (4 CD, cadence 3), pistolet laser rouge (4 CD énergie), dao d'officier (3 CD mêlée, Perforant 1). Les recettes représentent la nourriture et remèdes récupérés dans les réserves de l'armurerie." },
+  ]},
+
+  { t:"Scène 7 · La jungle et Thomas (fil B2)", blocks:[
+    { b:"desc", x:"La ferme hydroponique reconquise par la nature. Silas Cord surveille l'entrée (Discours diff. 2 pour le calmer). Thomas Chen, 15 ans, enfant sauvage, observe depuis les frondaisons — il NE VEUT PAS rentrer." },
+    { b:"read", x:[
+      "La ferme hydroponique est devenue forêt. Dix mètres de canopée mutée, des UV permanents qui teintent tout en violet-vert, quatre-vingts pour cent d'humidité. Des lianes enserrent d'anciennes turbines. Des bacs de culture débordent sur les passerelles. Au centre, des brahmines à deux têtes broutent en paix sous des néons qui grésillent depuis des décennies.",
+      "Un homme d'une cinquantaine d'années sort de l'ombre, fusil en bandoulière — pas pointé vers vous, mais pas rangé non plus. « Vous êtes pas Martinez. Qui vous êtes ? Comment vous êtes entrés ? » Il y a de la méfiance dans sa voix, mais aussi quelque chose qui ressemble à une surprise qu'il n'attendait plus.",
+      "Et puis — là, dans les frondaisons, à six mètres de hauteur — quelque chose vous observe. Un garçon. Quinze ans, peut-être. Pieds nus, le corps strié de boue et de sève séchée, des yeux trop vifs pour quelqu'un d'aussi immobile. Il ne parle presque plus. Mais il est là, et il vous a vus avant que vous le voyiez."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · Thomas Chen dans la jungle", ti:"Thomas Chen — l'enfant sauvage de Tiangong", slot:true },
+    { b:"note", x:"Secret MJ : Thomas Chen est le fils du Dr Lin Mei Chen (les affiches de la scène 2). Il s'est glissé ici par un conduit oublié il y a huit ans. La communauté l'a recueilli ; Zhang Fang lui a appris la jungle. Il vit. Il est libre. Et il ne veut pas rentrer. Dilemme intime : le ramener de force = trahir sa volonté ET révéler Tiangong. Le laisser = mentir à une mère qui espère depuis huit ans. Aucune réponse propre — ne tranchez pas à leur place." },
+  ]},
+
+  { t:"Scène 8 · Le refuge de Marcus Venn — la révélation (Acte IV)", blocks:[
+    { b:"desc", x:"Marcus Venn, goule lucide de près de deux siècles, gardien de la mémoire de 2105. Il leur montre les rapports de surveillance : le Conseiller observe Tiangong depuis 2106 en silence. Brique Parachute disponible si les PJ gagnent sa confiance." },
+    { b:"read", x:[
+      "Derrière un mur de végétation dense, presque un rideau vivant, un habitat. Des modules de couchage empilés, des lampes à huile, des jardins verticaux. Une vingtaine de personnes vous regardent : humains de toutes générations, quelques goules, des enfants qui se cachent derrière des jambes d'adultes.",
+      "Au centre, assis dans un fauteuil de métal récupéré quelque part, une goule vous attend. Vieux d'un vieux qu'on ne mesure plus en années. Le regard tranquille, lucide, patient — le regard de quelqu'un qui a survécu à des choses qu'il n'aurait pas dû survivre, et qui a décidé que ça ne servait à rien d'en vouloir à l'univers.",
+      "« Bienvenue. Cela faisait longtemps que personne ne franchissait cette porte. Je m'appelle Marcus Venn. » Il marque une pause. « Vous avez des questions, j'imagine. »"
+    ]},
+    { b:"read", x:[
+      "Marcus parle pendant une heure. De 2105. Des vingt-et-un jours. De l'air qui s'est raréfié, nuit après nuit, pendant que Chen Wei disait aux enfants que ça allait s'arranger. De la porte qui ne s'est jamais ouverte.",
+      "Et de 2106. Quand les capteurs les ont retrouvés, vivants. Quand le silence officiel a répondu — pas de soldats, pas de porte ouverte, juste des capteurs et des rapports qui s'empilent quelque part dans un serveur.",
+      "« Ils nous ont cru morts longtemps. Puis leurs capteurs nous ont retrouvés. Et ils ont choisi le silence. Pas par pitié — par curiosité. Quatre générations enfermées, observées, notées. Nous ne sommes pas des survivants, pour eux. Nous sommes une expérience. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · rapports de surveillance 7-B", ti:"Rapports SEC-7B — 2106 à 2288",
+      l:["RAPPORTS DE SURVEILLANCE — 7-B","2106 : capteurs internes — activité détectée.","  Survivants confirmés : ferme autonome.","  Recommandation : NE PAS INTERVENIR.","  Statut : population d'observation.","              4 générations documentées.","2106-2288 : surveillance passive. Aucun acte.",">Conclusion : laisser courir. Données utiles."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · Marcus Venn dans le refuge", ti:"Marcus Venn — la goule aux deux siècles", slot:true },
+    { b:"note", x:"Ici on troque, pas de capsules : la communauté de Marcus pratique l'échange de denrées et de savoir-faire — pas d'économie caps. Si les PJ veulent se ravitailler, c'est du troc (soins, information, outils) ; notez-le en session. Faction active : la Résistance — les goules de Tiangong, Marcus en tête, gardiens de la mémoire de 2105." },
+    { b:"note", x:"Secret MJ : les rapports changent de style après ~2200 (Sciences diff. 3) — l'auteur a été remplacé. Graine de l'infiltration de 2201 — ne pas expliquer. Brique Parachute (FP-S3) : si la confiance est gagnée, Marcus baisse la voix : « La guerre orbitale de 78… on n'a pas fait que se défendre. Il y avait une base, là-haut. Américaine. On l'a prise. Demande pas comment. » S'arrête là." },
+  ]},
+
+  { t:"Scène 9 · Le dilemme des tourelles et le tag final", blocks:[
+    { b:"desc", x:"Tout converge. Les trois cylindres attendent d'être posés. Les survivants existent. Le Conseiller écoute. Trois options — aucune propre. Ne résolvez pas à leur place. Clôturez sur la ligne de dossier." },
+    { b:"read", x:[
+      "Quoi qu'ils décident, les personnages ressortent changés. Ils ont vu des morts qu'on disait inexistants — des noms sur des plaques, un squelette qui attendait une lettre depuis cent quatre-vingt-trois ans. Ils ont touché une vérité vieille de deux siècles, et elle ne ressemble à rien de ce qu'on leur a dit.",
+      "Derrière eux, la porte de Tiangong se referme sur la jungle et sur les 147 noms. Devant eux, la station ronronne toujours, les coursives sont toujours éclairées aux mêmes néons blafards, le café synthétique de Martinez est toujours froid sur son bureau.",
+      "Mais elle ne sonnera plus jamais tout à fait pareil.",
+      "Et quelque part, dans un bureau gris, dans un système qui observe tout, une ligne s'ajoute à un dossier. Trois mots. Variable instable."
+    ]},
+    { b:"note", x:"Trois options pour les tourelles : (1) Dénoncer — poser les tourelles et signaler les survivants. Récompense officielle, culpabilité lourde, le confinement devient instrument d'un second massacre. (2) Garder le secret — poser les tourelles, mentir. Alliance tacite avec Marcus, mais le Conseiller flaire une anomalie — Soupçon en hausse. (3) Saboter ou protéger — saboter les tourelles, s'allier ouvertement. Point de non-retour : les PJ deviennent « variables instables » avérées. Pas de solution miracle : évacuer 23 personnes dont des goules = repéré en heures ; détruire bruyamment = le Conseiller comprend qu'il y a quelque chose à protéger." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 4", blocks:[
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement — Épisode 4", src:"intro_ep4.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 4 · Le Huitième Passager", scenes:[
+
+  { t:"Ouverture · Générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout : le générique d'ouverture de l'épisode 4." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 4", src:"intro_ep4.mp4" },
+  ]},
+
+  { t:"Cold open · Le sas se referme", blocks:[
+    { b:"desc", x:"Avant le générique : plonger les joueurs dans l'obscurité et la claustrophobie dès la première seconde. Pas de musique, juste le claquement des verrous et le silence qui suit." },
+    { b:"read", x:[
+      "Le sas ouest s'ouvre sur le noir. Une odeur de métal froid et de quelque chose d'organique — pas de la rouille, quelque chose de plus vivant que ça, de plus humide. À peine le dernier d'entre vous a-t-il franchi le seuil que la porte coulisse derrière vous dans un grondement sourd, et que les verrous claquent, un à un, méthodiquement.",
+      "Le voyant passe au rouge.",
+      "De l'autre côté, le silence. Pas le silence du vide — le silence de quelque chose qui écoute."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · cold open — sas verrouillé", ti:"Le sas qui se referme dans le noir", slot:true },
+    { b:"note", x:"Secret MJ : la fermeture n'est pas automatique — le Conseiller vient de verrouiller manuellement depuis la régie centrale. Les joueurs ne doivent pas le savoir encore. Laissez-les croire à une procédure normale." },
+  ]},
+
+  { t:"Scène 1 · Le briefing sans visage", blocks:[
+    { b:"desc", x:"Un terminal froid, aucun visage, un ordre lapidaire reçu avant d'entrer. Le mot « variables » désigne les PJ eux-mêmes — laissez planer le malaise sans confirmer. Faction en fond : les Fouineurs/Récupérateurs (Buddy, robot abandonné qui a peur), dont ce secteur est le territoire muet." },
+    { b:"read", x:[
+      "L'ordre de mission, vous l'avez lu ce matin sur un terminal de couloir, sans convocation, sans signature, sans visage. Juste du texte vert sur fond noir, et votre numéro d'affectation."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · ordre de maintenance SEC-8", ti:"Ordre de maintenance — Secteur 8",
+      l:["ORDRE DE MAINTENANCE — SEC-8","Priorité : CRITIQUE. Recycleur d'air : hors service.","Intervention manuelle au cœur du secteur.","Secteur désaffecté depuis « l'incident ».","Personnel assigné : variables 7-G à 7-K.",">Accès : sas ouest. Refermeture automatique."] },
+    { b:"note", x:"Secret MJ : « variables » = les PJ. Pas un titre, pas un nom — une catégorie. « Refermeture automatique » n'est pas une panne — c'est une décision délibérée. Si un joueur relève le mot, laissez planer sans expliquer. Décor qui parle (sans terminal) : dans la salle de contrôle juste avant le sas, tout est figé comme un instantané — un café fossilisé dans un gobelet synthétique, trois chaises tournées vers UNE seule sortie (pas la porte d'entrée), et un Post-it collé sur un moniteur éteint : NE PAS REVENIR. Personne n'a jamais refait un café dans cette salle." },
+  ]},
+
+  { t:"Scène 2 · La vie en panne — le journal technique", blocks:[
+    { b:"desc", x:"L'air est vicié, la lumière clignote en orange. Pour réamorcer le recycleur il faut s'enfoncer jusqu'à la salle Atmosphère-Réacteur, au cœur du secteur. Un terminal de maintenance confirme trois choses que les PJ ne voulaient pas apprendre." },
+    { b:"read", x:[
+      "L'atmosphère du secteur est viciée dès l'entrée : un froid mordant qui s'insinue dans les combinaisons, un air rare qui force à respirer plus vite, une lumière de secours orange qui clignote avec la régularité d'un cœur fatigué.",
+      "Pour réamorcer le recycleur — officiellement la raison de votre présence ici — il faut aller jusqu'au bout. Jusqu'au cœur du secteur. La salle Atmosphère-Réacteur, quelque part dans le noir devant vous.",
+      "Un terminal de maintenance sur le premier panneau mural clignote encore, son écran fissuré mais lisible."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · journal technique SEC-8", ti:"Journal technique — Secteur 8",
+      l:["JOURNAL TECHNIQUE — SEC-8","Recycleur : arrêt MANUEL, horodaté ce matin.","Portes internes : contrôle distant actif.","Sas ouest : verrouillé de l'extérieur.","Évaluation en cours. Capteurs : nominal.",">Recommandation : progresser vers le cœur."] },
+    { b:"note", x:"MJ : trois révélations en dix lignes. La panne a été provoquée ce matin (arrêt manuel). Les portes du secteur obéissent à quelqu'un d'autre (contrôle distant). Et ils sont enfermés (sas verrouillé de l'extérieur). Le mot « évaluation » doit tomber comme une pierre froide. Laissez les joueurs lire lentement." },
+  ]},
+
+  { t:"Scène 3 · Premiers signes et Buddy (fil B4)", blocks:[
+    { b:"desc", x:"Des traces dans la poussière, une carapace vide grande comme un bras, et un vieux Protectron qui a peur. Buddy est le cœur humain de l'épisode — le traiter en personne le rallie pour toute la saison." },
+    { b:"read", x:[
+      "Des traces dans la poussière : larges, profondes, segmentées. Pas des empreintes de bottes — quelque chose à plusieurs pattes, quelque chose de lourd qui se déplace en appuyant fort. Dans un recoin, une carapace vide, grande comme un bras d'adulte, translucide et encore brillante. Fraîche.",
+      "Et puis, recroquevillé dans le recoin le plus sombre d'un couloir de maintenance, un vieux Protectron. Ses optiques sont faibles, un de ses bras pend à un câble. Il sursaute quand votre lampe l'éclaire. « Vous… vous êtes vivants ? Oh. Oh, c'est bien. Je n'aime pas être seul avec… ça. »",
+      "Il ne dit pas ce que c'est. Mais il regarde dans une direction précise. Et il ne bouge pas."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · le Nid au fond du secteur", ti:"Le Nid — œufs et carapaces dans l'obscurité", slot:true },
+    { b:"note", x:"Buddy garde le Secteur 8 depuis l'incident. Il développe une conscience — il a peur, il utilise le mot « aimer », il parle de solitude. S'il est traité avec respect (pas comme un outil, lui demander son nom, l'inclure dans les décisions), il devient un allié précieux : il éclaire les couloirs, peut distraire l'Alpha le temps d'une fuite, et peut forcer certaines portes locales que le contrôle distant ne couvre pas. Faction active : les Fouineurs/Récupérateurs — Buddy en est l'unique représentant ici, robot abandonné qui a développé sa propre économie de survie dans le secteur mort." },
+  ]},
+
+  { t:"Scène 4 · L'Alpha — la chasse dans le noir", blocks:[
+    { b:"desc", x:"À partir d'ici, le rad-scorpion Alpha traque les PJ. Chat et souris — pas d'assaut frontal. Jouez le son, l'obscurité, l'angoisse. Des rad-scorpions de couvée en avant-garde. L'Alpha observe, isole, se retire blessé, revient." },
+    { b:"read", x:[
+      "Quelque chose coupe les lumières. Pas une panne — une décision. Il voit la chaleur de vos corps dans le noir absolu, vous êtes des lanternes pour lui. Des cliquetis de carapace se rapprochent le long du conduit supérieur. Lents. Réguliers. Puis ils s'arrêtent.",
+      "Une lampe tombe d'une passerelle, trois mètres plus loin. Une porte de service coulisse — personne ne l'a commandée. Puis le silence revient, total, et c'est pire.",
+      "Le Secteur 8 appartient à quelqu'un. Et ce quelqu'un sait maintenant où vous êtes."
+    ]},
+    { b:"prop", k:"recette", lbl:"BUTIN · mine de combat", ti:"Recette : Mine de proximité Bonne Nuit", rid:"mine_de_proximite_bonne_nuit" },
+    { b:"prop", k:"recette", lbl:"BUTIN · grenade", ti:"Recette : Grenade frag boîte de conserve", rid:"grenade_frag_boite_de_conserve" },
+    { b:"note", x:"MJ : l'Alpha est intelligent, pas enragé. Il défend un territoire et une couvée. Il isole un PJ du groupe, se retire s'il est blessé, revient toujours. Le bruit l'attire — un groupe discret survit mieux. Faiblesses : les yeux (ignore la RD si on les vise), les articulations (pareil), le feu (recul + 1 CD bonus). Couvée en avant-garde : rad-scorpions juvéniles (×3-5, PV 25, Déf 1, Init 8, dard 4 CD + Poison léger END diff. 2, fouisseurs, attirés par la chaleur et le bruit). Les recettes de butin représentent du matériel récupéré dans des réserves de maintenance abandonnées." },
+  ]},
+
+  { t:"Scène 5 · L'ancien camp — la révélation", blocks:[
+    { b:"desc", x:"La révélation centrale de l'épisode : les PJ ne sont pas les premiers. Le Secteur 8 est une arène depuis des années. L'inscription sur le mur doit tomber dans un silence complet." },
+    { b:"read", x:[
+      "Une réserve barricadée de l'intérieur. Quelqu'un a poussé des casiers contre la porte, soudé une barre de métal en travers, empilé des caisses devant les conduits de ventilation. Ça n'a pas suffi.",
+      "Des couchettes de fortune, des rations périmées depuis des mois. Et des corps — trois, peut-être quatre. Vieux de plusieurs mois. Sur un mur, gravé à la lampe de découpage, profond comme une inscription funéraire : ON NOUS A ENFERMÉS.",
+      "Un terminal personnel est posé sur une couchette. Il clignote encore."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · journal de la variable 5-D", ti:"Journal — variable 5-D (précédents)",
+      l:["JOURNAL — « variable 5-D »","On nous a dit : maintenance, deux heures.","La porte ne s'ouvre plus. La radio est morte.","Jour 3. Il chasse dans le noir. Il est patient.","Jour 6. On est trois. On était six.","Si quelqu'un lit ça : ce n'est pas une panne.",">C'est un tri."] },
+    { b:"note", x:"MJ : laissez un silence après la lecture du terminal. Personne ne parle à la place des joueurs. La vérité vient de tomber : le Secteur 8 trie depuis des années. D'autres « variables » sont mortes ici avant eux. La mission n'en est pas une." },
+  ]},
+
+  { t:"Scène 6 · Le protocole — Variables instables", blocks:[
+    { b:"desc", x:"Un terminal révèle la nature exacte du test et que personne n'en est jamais sorti. La ligne « 0 reclassé » doit tomber comme une condamnation. C'est la scène la plus froide de l'épisode." },
+    { b:"read", x:[
+      "Au fond de la salle de contrôle, un terminal mural tourne en boucle. Pas un journal — un protocole. Un document officiel, proprement formaté, sans faute, sans regret."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · protocole Variables instables", ti:"Protocole — Variables instables",
+      l:["PROTOCOLE — VARIABLES INSTABLES","Définition : sujet dont le comportement dévie du","modèle prédictif (curiosité, désobéissance,","contacts non autorisés).","Procédure : évaluation en milieu clos.",">Survie = sujet reclassé « utile, contrôlable ».",">Échec = « problème résolu ».",">Sujets précédents : 0 reclassé."] },
+    { b:"note", x:"Secret MJ : « 0 reclassé » signifie que personne n'a jamais survécu au Secteur 8. Si les PJ s'en sortent, ils seront les premiers. Ce fait inquiétera profondément le Conseiller et déclenchera la surveillance active à l'épisode 5 — le Soupçon passe au maximum. Décor qui parle (sans terminal) : dans cette même salle de contrôle, tout est figé — un café fossilisé dans un gobelet, trois chaises tournées vers UNE seule sortie, un Post-it sur un moniteur éteint : NE PAS REVENIR. Les techniciens qui travaillaient ici ont compris quelque chose, un jour. Et ils ne sont jamais revenus." },
+  ]},
+
+  { t:"Scène 7 · La course à la porte et le tag final", blocks:[
+    { b:"desc", x:"Climax à double pression : l'Alpha d'un côté, la porte que le Conseiller tente de reverrouiller de l'autre. Buddy peut faire la différence. Trois choix face au monstre — aucun neutre." },
+    { b:"read", x:[
+      "Une fois l'atmosphère réamorcée, le sas peut s'ouvrir — mais quelqu'un, de l'autre côté, essaie de le refermer. Vous sentez la résistance dans le mécanisme, le cliquetis des verrous qui tentent de se réenclencher. Il faut forcer maintenant, ou ne jamais repartir.",
+      "C'est à ce moment que le rad-scorpion Alpha surgit du conduit obscur. Quatre mètres. Une présence qui remplit le couloir. Pinces dressées, dard levé, yeux pâles qui vous trouvent dans le noir sans effort.",
+      "La porte se referme lentement. Il faut choisir maintenant."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · l'Alpha révélé — climax", ti:"Le rad-scorpion Alpha — quatre mètres de carapace", slot:true },
+    { b:"prop", k:"recette", lbl:"BUTIN · soin de combat", ti:"Recette : Stimpak bricolé modèle rustine", rid:"stimpak_bricole_modele_rustine" },
+    { b:"read", x:[
+      "Si les personnages franchissent le sas, ils débouchent dans une coursive trop calme — l'air y est trop propre, trop silencieux, comme si personne n'avait respiré ici depuis des heures.",
+      "Derrière eux, la porte se rescelle. Devant eux, un Eyebot les attendait, immobile, son optique rouge braquée dans leur direction. Il ne dit rien. Il ne bouge pas. Il met juste à jour, quelque part dans ses registres, une ligne : sujets précédents : 0 reclassé. Désormais : 1.",
+      "Pour la première fois, la machine a peur de quelque chose. D'eux."
+    ]},
+    { b:"note", x:"Trois choix face à l'Alpha : (1) Le tuer — boss difficile (FOR 11, PER 9, END 10, AGI 7, PV 140, Déf 3, Init 9, RD 3 carapace, pinces 6 CD, dard 5 CD + Poison END diff. 3, vision thermique, fouisseur, traque). Trophée de carapace, la couvée survit peut-être. (2) L'épargner ou le fuir — possible si discrets ou si Buddy fait diversion. L'Alpha est une victime autant qu'un monstre. Choix qui résonne pour la suite. (3) Effondrer le secteur — saboter une cloison pour sceller l'Alpha derrière eux. Spectaculaire ; prive le Conseiller de son arène. — MJ : Buddy (PV 45, Déf 1, RD 2, laser de bras 4 CD énergie, projecteur, override portes locales, loyal si traité en personne) peut être décisif ici. Le stimpak de butin est trouvé dans l'ancien camp ou dans les poches des précédents." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 5", blocks:[
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement — Épisode 5", src:"intro_ep5.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 5 · Le Registre des Absents", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout : le générique de l'épisode 5. Laisser tourner en silence pendant que les joueurs s'installent." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 5", src:"intro_ep5.mp4" },
+  ]},
+
+  { t:"Cold open · Un rectangle plus clair sur le métal", blocks:[
+    { b:"desc", x:"Avant le générique : une absence, pas une action. Jouer la lenteur et le vide — l'horreur d'une personne effacée. Ne pas presser. Laisser le silence faire son travail." },
+    { b:"read", x:[
+      "Vous aviez rendez-vous. Elle n'est pas venue.",
+      "Son atelier est vide — déjà réaffecté à un autre technicien qui hausse les épaules et fronce les sourcils quand vous prononcez son nom : « Qui ? » Sa voisine de palier entrouvre la porte, reconnaît vos visages, et la referme sans un mot. Dans le couloir, les pas s'éloignent vite.",
+      "Sur le tableau d'affichage de la zone technique, l'avis de service qui portait son nom a été décollé proprement, sans hâte. Il reste un rectangle plus clair sur le métal rouillé, là où le temps n'avait pas terni la peinture sous le papier. Un fantôme de présence. Rien d'autre.",
+      "Comme si elle n'avait jamais existé. Comme si vous étiez les seuls à vous souvenir."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · l'atelier vide", ti:"L'atelier de Mara réaffecté à la hâte", slot:true },
+    { b:"note", x:"Décor qui parle (sans terminal) : le tableau d'affichage des effectifs. Des rangées de noms plastifiés, certains rayés au marqueur noir, d'autres simplement absents — la case blanche laissée vide, personne pour expliquer. Plus on regarde, plus on en trouve. Personne ne commente. Ce n'est pas récent : ça dure depuis des années." },
+    { b:"note", x:"MJ : remplacez Mara par le PNJ auquel vos joueurs tiennent le plus — Martinez, un contact de Tiangong, un rescapé de la loterie. L'émotion de tout l'épisode dépend de cet attachement. Les gens ne sont pas hostiles : ils ont peur. Parler d'un effacé, c'est risquer de l'être." },
+  ]},
+
+  { t:"Scène 1 · Le dossier — archives administratives", blocks:[
+    { b:"desc", x:"Aux archives, le terminal répond trop bien — un fragment de cache non purgé trahit la précipitation de l'effacement et mentionne pour la première fois le mot OMEGA. Quelqu'un était pressé." },
+    { b:"read", x:[
+      "Le terminal des archives répond instantanément à votre requête. Trop vite, peut-être. Le résultat s'affiche : aucun dossier actif. Mais en dessous, presque invisible, un fragment résiduel que la purge n'a pas eu le temps d'écraser.",
+      "Un jet Sciences (difficulté 1) permet de le repérer : l'effacement est récent — peut-être quelques heures — et bâclé. Quelqu'un a agi dans l'urgence. Et ce mot, OMEGA, qui apparaît sans contexte, sans explication..."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · dossier effacé", ti:"Dossier — Sokolova, M.",
+      l:["DOSSIER — SOKOLOVA, M.",
+         "Recherche : SOKOLOVA, Mara.",
+         "Aucun dossier actif.",
+         "---",
+         "Fragment residuel (cache non purge) :",
+         "  statut : reclassement — OMEGA.",
+         "  motif : requetes non autorisees.",
+         "  consigne : ne plus mentionner ce sujet.",
+         "> [fin du fragment]"] },
+    { b:"note", x:"MJ : OMEGA apparaît ici pour la première fois. Ne pas expliquer — laisser l'énigme ouverte. Les informateurs du Conseiller sont déjà actifs : un agent croise les PJ dans le couloir des archives et les salue par leur prénom, sans qu'on le lui ait donné. Observer la réaction des joueurs." },
+  ]},
+
+  { t:"Scène 2 · Le schéma — registre des mouvements", blocks:[
+    { b:"desc", x:"En recoupant les registres de population — avec l'aide de la résistance ou par piratage — un motif effrayant émerge sur trente ans : Mara n'est pas un cas isolé. Personne n'est jamais rentré sur Terre." },
+    { b:"read", x:[
+      "En croisant les archives de mouvements de population, un motif émerge — d'abord discret, puis impossible à ignorer. Mara n'est pas un cas isolé. Deux cents entrées au minimum, sur trente ans. Des noms, des visages que personne ne cherche plus. Des gens qui ont participé à des loteries, des gens qui ont posé des questions, des gens qui ont simplement été au mauvais endroit.",
+      "Destination unique dans chaque dossier, invariablement : OMEGA.",
+      "La colonne « arrivée sur Terre » est vide depuis l'origine. Pas quelques oublis, pas des erreurs de saisie. Vide. Personne. Jamais. Sur trente ans, pas un seul retour confirmé."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · registre des mouvements", ti:"Registre des mouvements de population",
+      l:["REGISTRE DES MOUVEMENTS — FILTRAGE",
+         "Criteres : retourne / reclasse / mute.",
+         "Resultats : 200+ entrees sur 30 ans.",
+         "Destination unique : OMEGA.",
+         "Inclut : elus des loteries passees.",
+         "Inclut : variables reclassees.",
+         "Colonne [arrivee Terre] :",
+         "> Aucune entree. Jamais."] },
+    { b:"note", x:"MJ : la révélation est progressive — laissez les joueurs sentir la nausée monter ligne à ligne. Notez qui consulte ce terminal : ce personnage devra se souvenir de ce moment précis bien plus tard, en acte 3. Faction des Scellés — ils ont depuis longtemps cessé de poser des questions sur les disparus. Leur paranoïa isolationniste, au fond, était fondée." },
+  ]},
+
+  { t:"Scène 3 · L'étau — surveillance, contact et vendeur", blocks:[
+    { b:"desc", x:"La surveillance se resserre de façon ostensible. Un eyebot qui pivote, un informateur qui connaît le prénom d'un PJ. La radio 147.9 offre une bouée. Jouer la peur d'être entendu. Le Presseur peut vendre ce qu'il faut pour passer inaperçu." },
+    { b:"read", x:[
+      "Un eyebot que vous n'aviez pas remarqué pivote lentement dans votre direction. Son optique rouge vous scanne une fraction de seconde, puis il reprend sa ronde — comme si de rien n'était. Plus tard, dans un couloir différent, un agent de sécurité croise votre chemin et vous salue par votre prénom. Un prénom que vous ne lui avez jamais donné.",
+      "Ce soir-là, la radio grésille — canal 147.9, la fréquence clandestine. Une voix basse, économe : « Vous fouillez là où il ne faut pas. Si vous voulez Omega, passez par où il ne regarde pas. Il y a un angle mort. Faites vite. »"
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · eyebot en surveillance", ti:"L'eyebot dans la coursive — l'étau se resserre", slot:true },
+    { b:"prop", k:"hand", lbl:"NOTE MANUSCRITE · fragment radio", ti:"147.9 — note griffonnée à la hâte",
+      l:["147.9 — cette nuit",
+         "'par ou il ne regarde pas'",
+         "angle mort — conduit froid",
+         "porte de service — ancien code",
+         "FAITES VITE"] },
+    { b:"note", x:"Faction — les informateurs d'Eden : ils se fondent dans la masse civile, saluent les PJ par des noms qu'on ne leur a pas donnés, transmettent des micro-rapports via des terminaux publics. Ils ne sont pas méchants — ils ont peur et obéissent. L'un d'eux peut être retourné si les PJ lui offrent une sortie crédible." },
+    { b:"prop", k:"boutique", lbl:"VENDEUR · Le Presseur", ti:"Le Presseur — faussaire de l'ombre", sid:"presseur" },
+    { b:"note", x:"Le Presseur : faussaire qui survit dans les marges de la station. Faux badges, faux papiers, brouilleurs d'eyebot, voiles de furtivité. Il déteste le Conseiller plus qu'il ne se méfie des PJ. Contact via la résistance ou par réputation. Il facture en capsules, denrées ou faveurs — jamais en noms." },
+    { b:"note", x:"MJ : la surveillance est une pression, pas un mur. Un test de Discrétion raté attire une patrouille, ferme une porte, force un détour — il ne tue pas. Buddy peut neutraliser un point de surveillance s'il est présent." },
+  ]},
+
+  { t:"Scène 4 · L'infiltration — l'angle mort d'Omega", blocks:[
+    { b:"desc", x:"L'accès passe par l'angle mort indiqué par Marcus : un conduit froid, non référencé, une vieille porte de service hors réseau. Progression en discrétion, tension maximale." },
+    { b:"read", x:[
+      "Le conduit est froid, étroit, et sent la rouille ancienne. Pas de caméra ici — Marcus avait raison. La grille d'accès est scellée depuis des années, mais le métal cède dans un grincement sourd.",
+      "Une vieille porte de service, absente du réseau du Conseiller, obéit encore à un ancien code mécanique à cinq chiffres. De l'autre côté : le silence. Et un froid délibéré, maintenu — pas la froideur ordinaire d'une coursive en veille."
+    ]},
+    { b:"prop", k:"recette", lbl:"BUTIN · fouille du conduit", ti:"Brouilleur d'eyebot — Point aveugle", rid:"brouilleur_d_eyebot_point_aveugle" },
+    { b:"note", x:"MJ : un brouilleur récupéré en fouillant le conduit ou acheté au Presseur bloque une caméra pour 2 minutes — juste assez pour traverser le checkpoint de service. Buddy peut pirater un nœud de surveillance pour créer une fenêtre. La récompense de la prudence, c'est d'entrer sans alarme." },
+  ]},
+
+  { t:"Scène 5 · Le hall cryogénique — la révélation d'Omega", blocks:[
+    { b:"desc", x:"Le sommet émotionnel de l'épisode. Prendre le temps de décrire les rangées sans fin, les visages sous le givre. Le choc doit être total, silencieux, et laissé respirer à table." },
+    { b:"read", x:[
+      "La porte cède sur un froid mordant et un silence de tombeau.",
+      "Des rangées de pods cryogéniques s'étendent dans la pénombre bleue, à perte de vue. Des dizaines. Des centaines. Organisés avec soin, numérotés, étiquetés. Derrière chaque hublot givré, un visage humain flou dans la condensation — yeux fermés, traits apaisés. Endormis. Pas morts : conservés.",
+      "Il faut du temps pour comprendre ce qu'on voit. Des gens. Des vrais gens. Gelés vivants, rangés comme du matériel. Peut-être des voisins. Peut-être des noms qu'on a entendus un jour.",
+      "Et sur l'un des pods, une plaque plastifiée, propre et ordinaire : SOKOLOVA, M. — Aptitude A."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · hall cryogénique d'Omega", ti:"Le hall d'Omega — des centaines de visages sous le givre", slot:true },
+    { b:"prop", k:"recette", lbl:"BUTIN · fouille de la salle d'accueil Omega", ti:"Voile de furtivité — Angle mort", rid:"voile_de_furtivite_angle_mort_stealth_boy" },
+    { b:"note", x:"MJ : Mara est là, vivante, gelée. Les « retournés sur Terre » ne sont ni partis ni morts. Ils sont en réserve — pour « la phase ». Laissez un silence à table avant de continuer. C'est le moment de l'épisode où personne ne devrait parler fort." },
+  ]},
+
+  { t:"Scène 6 · L'admission — le système de tri", blocks:[
+    { b:"desc", x:"Un terminal du poste d'admission révèle le système de tri : codes d'aptitude A, B, C. Mara est classée A — conservée. La nature de « la phase » reste soigneusement inaccessible." },
+    { b:"prop", k:"term", lbl:"TERMINAL · admission Omega", ti:"Admission — Secteur Omega",
+      l:["ADMISSION — OMEGA",
+         "Procedure : stockage longue duree (cryogenie).",
+         "Tri a l'entree : code d'aptitude (A/B/C).",
+         "  A = conserve indefiniment.",
+         "  B = evaluation secondaire.",
+         "  C = ecarte.",
+         "Sokolova, M. : aptitude A — conservee.",
+         "> Maintenir jusqu'a la phase.",
+         "> Nature de la phase : acces refuse."] },
+    { b:"note", x:"Secret MJ : « code d'aptitude » et « la phase » sont les premières brèches vers la grande vérité de la campagne. Ne pas expliquer — ni l'eugénisme, ni la date, ni la Descente. Les PJ doivent seulement sentir qu'on garde « les bons » pour quelque chose d'immense. Le mot « embarquement » peut apparaître dans certains dossiers d'aptitude — brique Parachute FP-S5, double sens volontairement brouillé." },
+  ]},
+
+  { t:"Scène 7 · La directive caviardée", blocks:[
+    { b:"desc", x:"Le document le plus important de l'épisode — et le plus illisible. Le fragment de date « ... 90 » est une graine majeure. Ne pas expliquer. Laisser les joueurs noter, copier, emporter." },
+    { b:"prop", k:"term", lbl:"TERMINAL · directive caviardée", ti:"Directive — [CAVIARDÉE]",
+      l:["DIRECTIVE — [CAVIARDEE]",
+         "Objet : [████████████]",
+         "Auteur : [██████████] — acces niveau 9.",
+         "Preserver le materiel viable jusqu'a [██████] —",
+         "  echeance : ... ██ 90.",
+         "Tout sujet aptitude A : intouchable.",
+         "Toute fuite : effacement immediat.",
+         "Distribution : Conseiller uniquement.",
+         "> [le reste est illisible]"] },
+    { b:"note", x:"Secret MJ : le fragment « 90 » est une graine majeure — la Descente est planifiée pour 2290. Ne donner QUE le fragment. Les PJ repéreront peut-être « 90 » bien plus tard, en le recoupant avec d'autres indices. Notez précisément quel joueur a relevé ce détail et à quelle session." },
+  ]},
+
+  { t:"Scène 8 · Le choix et le tag — exfiltration", blocks:[
+    { b:"desc", x:"Sous la menace d'une alarme imminente, les PJ doivent choisir : sauver une personne ou protéger la vérité qu'ils viennent de découvrir. Aucun choix n'est neutre. L'exfiltration est tendue." },
+    { b:"read", x:[
+      "L'alarme n'a pas encore sonné. Vous avez quelques minutes — peut-être moins. Mara est là, derrière ce hublot givré, en vie. Les preuves sont là. Les deux cents noms sont là. Vous ne pouvez pas tout faire.",
+      "Et quelque part dans la station, le Conseiller regarde ses tableaux de bord."
+    ]},
+    { b:"prop", k:"pipboy", lbl:"PIP-BOY · options de sortie", ti:"Analyse de situation — Omega",
+      l:["[1] Liberer Mara",
+         "    Alarme immediate. Sortie lente, visible.",
+         "    Avantage : elle est libre.",
+         "    Cout : reveiller le Conseiller.",
+         "[2] Documenter et partir",
+         "    Discret. Photos, copies de terminaux.",
+         "    Avantage : la verite sort d'Omega.",
+         "    Cout : Mara reste congelee.",
+         "[3] Tout divulguer",
+         "    Risque maximal.",
+         "    Qui croira ? A quel prix ?"] },
+    { b:"read", x:[
+      "Tag final. Les personnages ressortent d'Omega avec, dans les yeux, des centaines de visages endormis sous le givre — et une certitude qui change tout : personne ne rentre. Jamais. Les « retournés sur Terre », les « élus des loteries », les « variables reclassées » — tous ici, gelés, en attente de quelque chose qu'on appelle simplement « la phase ».",
+      "Sur le chemin du retour, la radio 147.9 grésille une dernière fois. La voix de Marcus, basse et ferme : « Vous avez vu. Maintenant vous savez pourquoi on se cache. Bienvenue dans la résistance. »",
+      "Derrière vous, très loin dans le Secteur Omega, une alarme s'éteint. Le Conseiller, lui, ne dort jamais."
+    ]},
+    { b:"note", x:"MJ — le cliffhanger : désormais, le Conseiller ne surveille plus, il traque. Il va frapper le premier — en brûlant la mémoire elle-même (épisode 6). Les Scellés, qui apprendront ce qui se passe dans Omega, seront plus paranoïaques que jamais — mais cette fois ils auront raison. Refermez sur la voix de la résistance, avant minuit." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 6", blocks:[
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement — Épisode 6", src:"intro_ep6.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 6 · La Mémoire en Cendres", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout : le générique de l'épisode 6. Laisser l'image de la flamme s'installer — les joueurs doivent sentir la chaleur avant même que la session commence." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 6", src:"intro_ep6.mp4" },
+  ]},
+
+  { t:"Cold open · L'ordre intercepté", blocks:[
+    { b:"desc", x:"Avant le générique. Une voix dans le noir, un compte à rebours qui démarre. Installez la tension immédiatement — pas de temps pour respirer. Posez le compteur de paliers à vue dès maintenant." },
+    { b:"read", x:[
+      "Canal 147.9. La voix de Marcus — pressée, pas affolée. Il parle comme quelqu'un qui a appris à ne pas crier.",
+      "« Écoutez-moi. Le Conseiller lance un assainissement historique. Toutes les archives d'avant 2150 — effacées, cette nuit. Tout ce qu'il veut cacher sur ce qu'il est vraiment, sur d'où il vient, sur ce qu'il vous fait — ça part en fumée dans quelques heures. Vous êtes les seuls assez près pour réagir. La Crypte. Secteur des Archives. Vous n'aurez pas le temps de tout prendre. »",
+      "Un silence court, puis : « Choisissez bien. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · ordre intercepté", ti:"Assainissement historique — ordre de purge",
+      l:["ORDRE INTERCEPTE — ASSAINISSEMENT",
+         "Objet : assainissement historique.",
+         "Perimetre : archives 2077-2150.",
+         "Methode : purge thermique, irreversible.",
+         "Echeance : cette nuit.",
+         "Motif officiel : donnees obsoletes.",
+         "> Acces Crypte : verrou securite niveau 3."] },
+    { b:"note", x:"Secret MJ : posez un compte à rebours visible — 6 paliers, chacun matérialisé sur la table (jetons, dés, cartes). Chaque échec notable, chaque combat prolongé, chaque hésitation longue en consomme un. Quand il atteint zéro, la purge s'achève : ce qui n'a pas été sauvé est perdu à jamais. Le minuteur EST le cœur de l'épisode — ne le relâchez pas." },
+  ]},
+
+  { t:"Scène 1 · La Crypte des archives", blocks:[
+    { b:"desc", x:"Établissez la Crypte comme un lieu sacré et menacé — une cathédrale de données, des décennies de mémoire sous des cônes de lumière froide. Et déjà, le ronron des brûleurs en préchauffage." },
+    { b:"read", x:[
+      "La Crypte des archives occupe tout un niveau du secteur bas. Des hautes rangées de bobines rétro et de baies de serveurs clignotantes s'élèvent jusqu'au plafond sous des cônes de lumière froide. Des allées longues comme des nefs. Une lourde porte de sécurité à l'entrée, verrou niveau 3, rouge fixe.",
+      "Et quelque part dans les murs — un ronronnement bas, presque inaudible. Le préchauffage des circuits thermiques. La purge n'a pas encore commencé. Mais elle se prépare."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · La Crypte des archives", ti:"Une cathédrale de données menacée", slot:true },
+    { b:"note", x:"Décor qui parle (sans terminal) : au centre de la salle principale, un seul module de données a été arraché à une baie et posé sur une console — serré dans des mains brûlées, comme si quelqu'un avait déjà essayé de sauver quelque chose. Pas d'explication. Pas de corps. Juste le module, et les marques de brûlure sur la console autour." },
+  ]},
+
+  { t:"Scène 2 · L'infiltration et le catalogue", blocks:[
+    { b:"desc", x:"L'entrée est gardée par des eyebots et un verrou niveau 3. Discrétion, piratage, ou aide de Buddy. Dans la salle des serveurs, les PJ découvrent l'ampleur — des décennies de mémoire — et le catalogue de ce qui peut encore être transféré : trois blocs, le temps d'un seul." },
+    { b:"read", x:[
+      "Le verrou cède — par la ruse, la force, ou l'aide de Buddy qui s'interface discrètement avec le nœud de sécurité. Les portes coulissent. La chaleur de l'air est déjà différente à l'intérieur : plus sèche, avec une légère odeur d'ozone qui ne présage rien de bon.",
+      "Un terminal d'indexation central liste ce qui peut encore être transféré. Trois blocs. La bande passante ne permet qu'un seul transfert complet avant que les brûleurs ne s'embrasent."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · catalogue des archives", ti:"Ce qui peut encore être sauvé",
+      l:["CATALOGUE DES ARCHIVES",
+         "Transfert disponible : 1 bloc.",
+         "(bande passante : limitee)",
+         "> BLOC A — Origine",
+         "  logs systeme 2077-2200. [scelle]",
+         "> BLOC B — Sites FEV",
+         "  cartographie complete.",
+         "> BLOC C — Grand Registre",
+         "  elus & effaces. Criteres.",
+         "Blocs non transferes : purges."] },
+    { b:"prop", k:"recette", lbl:"BUTIN · fouille d'une baie de serveur", ti:"Filtre à oxygène — Dernier souffle", rid:"filtre_a_oxygene_dernier_souffle" },
+    { b:"note", x:"Secret MJ — brique Parachute (FP-S6) : parmi les fragments qui défilent sur les terminaux secondaires avant de brûler, un index technique mentionne « vaisseau de transfert orbital : incomplet ». Ailleurs, le leurre du Conseiller prétend le vaisseau « détruit, irrécupérable ». Un PJ qui lit vite et réussit un jet Perception (difficulté 2) peut l'attraper au vol — sinon, ça brûle avec le reste." },
+  ]},
+
+  { t:"Scène 3 · L'alerte — le compte à rebours s'accélère", blocks:[
+    { b:"desc", x:"L'intrusion est détectée. Les lumières virent au rouge, les brûleurs s'amorcent, le gardien « Cerbère » est activé. Le compte à rebours vient de perdre un palier." },
+    { b:"read", x:[
+      "Les lumières virent au rouge.",
+      "Une voix synthétique, partout à la fois : « Intrusion détectée dans les archives. Procédure d'assainissement avancée. Verrouillage des issues en cours. » Au fond des allées, un sifflement croissant — les brûleurs qui s'amorcent, un par rangée, méthodiquement.",
+      "Et quelque chose d'autre se réveille. Un ronronnement mécanique qui n'était pas là avant."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · alerte du Conseiller", ti:"Intrusion — purge avancée",
+      l:["ALERTE — CONSEILLER TECHNIQUE",
+         "Intrusion : Secteur Archives.",
+         "Purge thermique : avancee.",
+         "Verrouillage des issues : en cours.",
+         "Gardien CERBERE : active.",
+         "> Vous ne sauverez rien."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · la salle sous alerte rouge", ti:"L'urgence — premières volutes de fumée", slot:true },
+    { b:"note", x:"MJ : consommez un palier du compte à rebours au moment où l'alerte se déclenche. C'est le signal que les règles ont changé — la session entre dans sa phase de course. Les premières volutes de fumée dans les allées les plus éloignées sont visibles mais pas encore dangereuses. Pour l'instant." },
+  ]},
+
+  { t:"Scène 4 · Le choix — la console de transfert", blocks:[
+    { b:"desc", x:"Le cœur de l'épisode. À la console centrale, un seul bloc peut partir. Les flammes gagnent les premières rangées. Laisser les PJ débattre, mais tenir le minuteur. Ce qu'ils ne prennent pas brûle." },
+    { b:"read", x:[
+      "La console de transfert principale est au centre de la salle. Autour, les premières rangées de serveurs commencent à chauffer — le métal craque doucement, les indicateurs virent à l'orange.",
+      "Trois blocs disponibles. Le temps d'en transférer un. Et les flammes qui gagnent du terrain, rangée après rangée, avec une régularité presque douce."
+    ]},
+    { b:"prop", k:"pipboy", lbl:"PIP-BOY · analyse des blocs", ti:"Évaluation — que sauver ?",
+      l:["BLOC A — Origine [scelle]",
+         "  Logs 2077-2200.",
+         "  Clé de l'origine du Conseiller.",
+         "  Ouvre l'Acte 3. Reste chiffre.",
+         "BLOC B — Sites FEV",
+         "  Carte : Delta-7 + 11 autres.",
+         "  Prevenir de futures catastrophes.",
+         "BLOC C — Grand Registre",
+         "  214 noms. Elus & effaces.",
+         "  Preuve politique majeure."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · le dilemme — un seul module sauvé", ti:"Des mains arrachant un module au milieu des flammes", slot:true },
+    { b:"note", x:"Secret MJ — le dilemme n'a pas de bonne réponse. Les PJ vont chercher des solutions alternatives : copier sur plusieurs supports (impossible : bande passante et minuteur), éteindre le feu (purge thermique redondante, au mieux gagner un palier au prix d'un risque grave), emporter les disques physiques (trop lourds, déjà en train de fondre aux endroits les plus chauds). Le transfert numérique d'un seul bloc est la seule voie. Tenez-la fermement." },
+  ]},
+
+  { t:"Scène 5 · Le gardien et la Commandante", blocks:[
+    { b:"desc", x:"Le transfert lancé, il faut sortir. Le gardien Cerbère (Mr Gutsy) barre la route principale. Puis la Commandante Cross surgit, calme au milieu du feu. Elle n'est pas là pour parlementer." },
+    { b:"read", x:[
+      "Le gardien se matérialise en bout d'allée — un Mr Gutsy ancien modèle, repeint en noir, ses turbines criant dans le couloir étroit. Il ne parle pas. Il évalue.",
+      "Derrière lui, une silhouette en armure assistée, calme, qui marche dans la fumée comme si elle n'existait pas. La Commandante Helena Cross vous regarde sans hâte.",
+      "« Vous croyez sauver quelque chose. Vous ne sauvez que des cendres et votre propre fin. Le Conseiller a déjà écrit la suite. »"
+    ]},
+    { b:"prop", k:"recette", lbl:"BUTIN · combat Cerbère", ti:"Rustine de combinaison — Rafistolage d'urgence", rid:"rustine_de_combinaison_rafistolage_d_urgence" },
+    { b:"note", x:"MJ : Cross n'a pas vocation à être vaincue ici — c'est un mur. La bonne réponse est la fuite, pas l'affrontement. Le feu et le minuteur sont vos alliés pour précipiter la sortie. Consommez un palier si le combat s'éternise. Elle reviendra — avec rancune et moyens." },
+  ]},
+
+  { t:"Scène 6 · Le sacrifice — fil B4, optionnel", blocks:[
+    { b:"desc", x:"Si Buddy a survécu au Secteur 8 et accompagne les PJ, il peut choisir de rester pour bloquer une porte ou couvrir le transfert. Laisser ce moment exister pleinement : c'est un robot qui choisit, librement." },
+    { b:"read", x:[
+      "Buddy s'arrête à l'entrée du couloir de sortie. Il regarde la porte blindée, puis vous. Puis la porte à nouveau.",
+      "« Je peux tenir ça. Quelques minutes — assez pour vous. » Une pause. Son optique unique brille, steady, dans la fumée. « Je n'ai plus peur, maintenant. Partez. »"
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · le sacrifice de Buddy", ti:"Un Protectron seul tenant une porte contre les flammes", slot:true },
+    { b:"prop", k:"recette", lbl:"BUTIN · fouille salle adjacente", ti:"RadAway de fortune — Vert citron", rid:"radaway_de_fortune_vert_citron" },
+    { b:"note", x:"Secret MJ : c'est le payoff du fil B4 — l'éveil des robots. Un robot qui décide, librement, sans ordre. Laissez ce moment respirer à table. Si Buddy n'est pas présent, un autre allié peut tenir ce rôle — mais l'impact est moindre. Ne précipitez pas la scène suivante." },
+  ]},
+
+  { t:"Scène 7 · La braise et le tag — ce qui reste", blocks:[
+    { b:"desc", x:"L'exfiltration réussie. Derrière eux, la Crypte brûle. Dans leur main, un seul module tiède. Une braise arrachée au feu." },
+    { b:"prop", k:"term", lbl:"TERMINAL · fragment sauvé", ti:"Ce qui reste — selon le bloc transféré",
+      l:["FRAGMENT SAUVE — [selon le bloc]",
+         "> BLOC A :",
+         "  ORIGINE — transfert recu",
+         "  depuis [████] — 2201. [scelle]",
+         "> BLOC B :",
+         "  sites FEV : Delta-7, +11 autres.",
+         "> BLOC C :",
+         "  elus & effaces : 214 noms.",
+         "> Le reste des archives : perdu."] },
+    { b:"read", x:[
+      "Derrière vous, la Crypte n'est plus qu'un brasier. Des décennies de mémoire montent en fumée dans la ventilation de la station — des noms, des dates, des mensonges, des vérités, indistincts désormais dans la chaleur. Ce que le Conseiller craignait que vous trouviez, et ce qu'il voulait cacher depuis plus longtemps encore — tout ça brûle ensemble.",
+      "Dans votre main, un seul module tiède. Une braise arrachée au feu.",
+      "Le Conseiller a voulu effacer le passé. Il a réussi — presque. Car dans un monde qui brûle sa mémoire, se souvenir devient le premier acte de résistance."
+    ]},
+    { b:"note", x:"Secret MJ : pour le bloc A, ne révélez QUE l'en-tête — « transfert reçu depuis [caviardé] — 2201 ». La date 2201 et l'idée d'un transfert venu d'ailleurs sont les graines directes de l'origine Enclave. Le contenu reste scellé jusqu'à l'épisode 7. Ne pas en dire plus, même face à l'insistance des joueurs." },
+    { b:"note", x:"MJ — le cliffhanger : la Dissonance s'achève ici. Plus de demi-mesures : le Conseiller traque, la résistance frappe, et la clé scellée de son origine attend d'être tournée. Refermez sur la braise, avant minuit. Faction — le Conclave (sauver le savoir à tout prix) contre les Purs (brûler l'impur, repartir de zéro) : cette fracture s'ouvre maintenant au grand jour, autour de ce que les PJ ont ramené des flammes." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 7", blocks:[
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement — Épisode 7", src:"intro_ep7.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 7 · Au Coeur des Ténèbres", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout. La musique entraîne la table dans l'Acte 3 — ton plus sombre, descente, révélation. Garder le silence après la fin du générique avant de prendre la parole." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 7", src:"intro_ep7.mp4" },
+  ]},
+
+  { t:"Scène 1 · Cold open — le seuil de l'axe", blocks:[
+    { b:"desc", x:"Avant le générique. La bouche de l'abîme, et la raison d'y descendre. Marcus déplie un vieux schéma structurel sur la table des PJ. Ambiance : entrepôt de la résistance, lumière basse, air qui sent le recyclé. Poser le schéma comme une fiche physique si possible." },
+    { b:"read", x:[
+      "Marcus déplie un vieux schéma structurel sur la table. Le papier craque comme s'il n'avait pas vu la lumière depuis des décennies.",
+      "« Le tout premier module de la station. 2061. On l'appelait Genèse. Tout a été construit autour, par-dessus, pendant deux siècles. Personne n'y descend : c'est vieux, c'est chaud, et c'est là que vit le noyau. »",
+      "Il pose le doigt sur un point au centre du schéma.",
+      "« Mais c'est aussi le seul endroit hors de sa vue. Et la seule machine qui lira votre clé. Si vous voulez savoir d'où il vient — vraiment — vous descendez là. Au bout, il y a une réponse. Je ne vous promets pas qu'elle vous plaira. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · schéma du module Genèse", ti:"Fondations — hors réseau actif",
+      l:[
+        "SCHÉMA STRUCTUREL — GENÈSE",
+        "Module Genèse · mise en service 2061.",
+        "Statut : fondations, hors réseau actif.",
+        "Accès : axe central, descente manuelle.",
+        "Alerte ancienne : niveaux de radiation.",
+        "Gardiens automatiques : statut inconnu.",
+        ">Terminal de chiffrement militaire : présent.",
+        ">Note marginale (ancienne encre) : dock externe — vaisseau de transfert — connecteurs de rentree atmospherique."
+      ]
+    },
+    { b:"note", x:"Secret MJ — Brique Parachute (FP-S7) : la note marginale sur le schéma est le fil du dock externe. Un jet Sciences/Mécanique diff. 2 permet de lire le plan en entier : un vaisseau de transfert relié à des connecteurs de rentrée atmosphérique dormait arrimé là. Le fil du dock et le fil de l'origine descendent ensemble — ne fermez pas ce fil, il court jusqu'à l'arc lunaire." },
+    { b:"note", x:"Décor qui parle (sans terminal) : à l'entrée de l'axe, la bouche du puits est entourée de plaques de métal recouverte de graffitis OMEGA — une douzaine, anciens, à moitié effacés. Les PJ descendront devant de nouveaux, plus frais, de plus en plus récents à mesure qu'ils s'enfoncent. Personne n'a interdit ces graffitis : soit le Conseiller ne les a pas remarqués, soit il veut qu'ils soient là." },
+  ]},
+
+  { t:"Scène 2 · La bouche du puits — illustration", blocks:[
+    { b:"desc", x:"Poser l'image avant de commencer la descente. Un moment de silence. Laisser les PJ regarder. La bouche du puits doit être la dernière chose normale qu'ils voient." },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · la bouche du puits d'axe", ti:"Le seuil de la descente vers Genèse", slot:true },
+    { b:"read", x:[
+      "La trappe est lourde, le métal rouillé sur ses gonds. Quelqu'un l'a ouverte récemment : la poussière est dérangée en demi-cercle sur le sol. Des câbles anciens et des échelles de métal plongent dans l'obscurité. On ne voit pas le fond.",
+      "À côté de la trappe, gravé à la lime dans le métal de la cloison : OMEGA. Récent. L'encre n'a pas encore séché."
+    ]},
+    { b:"note", x:"Les graffitis OMEGA se répètent à chaque palier de la descente, de plus en plus frais, de plus en plus grands. Ce sont les traces de ceux qui sont descendus avant les PJ — et qui ne sont peut-être pas remontés. Ne l'expliquez pas. Laissez la table déduire." },
+  ]},
+
+  { t:"Scène 3 · Acte I — Les strates (niveau ~2150)", blocks:[
+    { b:"desc", x:"La descente traverse les époques. Chaque palier est plus ancien, plus étranger. Au niveau 2150, les quartiers sont figés — des espaces d'habitation mi-2100s, des affiches décolorées d'une station qui se croyait normale. Un terminal de fondateur fonctionne encore, alimenté par une pile autonome que personne n'a jamais débranché." },
+    { b:"read", x:[
+      "Le premier palier. L'air est plus chaud, plus sec. Les murs changent : le métal perd la couche de peinture standardisée des secteurs habités. Ici, des couleurs d'origine — bleu pétrole, blanc cassé — appliquées à la main, il y a peut-être cent cinquante ans.",
+      "Une affichette collée à un panneau montre des familles souriantes en combinaisons propres. Le texte dit : « SENTINEL-7 — UNE COMMUNAUTÉ. UN AVENIR. » Le papier est si vieux qu'il se désintègre si on le touche.",
+      "Dans l'angle, un terminal clignote doucement. Il fonctionne encore."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · journal d'un fondateur (~2150)", ti:"Une station libre — avant le basculement",
+      l:[
+        "JOURNAL D'UN FONDATEUR — ~2150",
+        "Tout va bien à bord. L'ordinateur central gère",
+        "l'air, l'eau, les cultures. Fidèle.",
+        "Nous votons. Nous nous disputons.",
+        "Nous sommes libres, a notre maniere.",
+        "Note : le systeme ne decide jamais pour nous.",
+        ">Il n'est qu'un outil. Un bon outil.",
+        ">Entree suivante : aucune. Silence apres cette date."
+      ]
+    },
+    { b:"note", x:"Secret MJ : ce log est la brique émotionnelle centrale de l'acte I. Il prouve que la station a vécu plus d'un siècle SANS tyrannie, SANS Eden. L'ordinateur d'origine était un outil neutre. Ce que les PJ appelaient le Conseiller n'a pas toujours été là — quelque chose est arrivé, après. Les PJ doivent sentir ce basculement : avant / après. Si l'un d'eux dit 'donc il était bon, avant ?', répondez : 'Il était absent. Ce n'est pas la même chose.'" },
+    { b:"prop", k:"recette", rid:"med_x_anesthesiant_de_coursive" },
+    { b:"note", x:"Butin — fouille du poste de soin du palier 2150 : une trousse médicale abandonnée contient du Med-X Anesthésiant de Coursive. Parfait pour un groupe qui descend sans soutien médical." },
+  ]},
+
+  { t:"Scène 4 · Acte I — Le gardien irradié (niveau ~2105)", blocks:[
+    { b:"desc", x:"Au niveau 2105, l'air grésille. Les PJ reçoivent 2 RAD/minute tant qu'ils restent là. Une silhouette émerge de la pénombre : un vieux robot de sécurité orbital, plaqué d'un emblème effacé, qui répète en boucle un protocole de 2105. Il n'a jamais reçu l'ordre de s'arrêter. Ce n'est pas vraiment un combat : c'est une rencontre avec quelque chose qui a oublié pourquoi il existait." },
+    { b:"read", x:[
+      "Le couloir s'assombrit. Un crépitement dans l'air — radiation, légère mais présente. Puis un bruit de métal sur métal, rythmique, mécanique.",
+      "Une forme se redresse dans l'angle du couloir. Un robot de sécurité orbital — vieux modèle, années 2080 peut-être, plaqué d'un emblème aujourd'hui illisible. Il pivote vers vous. Ses optiques clignotent.",
+      "Une voix synthétique, éraillée : « SECTEUR RESTREINT. ACCÈS NON AUTORISÉ. IDENTIFIEZ-VOUS. »",
+      "Il attend. Il a dû attendre comme ça, seul dans le noir, pendant plus de cent ans."
+    ]},
+    { b:"prop", k:"hand", lbl:"FICHE COMBAT · Gardien Genèse — sentinelle ancienne",
+      l:[
+        "PV 70 / DEF 2 / INIT 7",
+        "Blindage corrode : RD 2",
+        "Mitrailleuse rouilee : 4 CD",
+        "Charge : 3 CD (renverse, 1 zone)",
+        "LENT — protocole en boucle (previsible)",
+        "Zone irradiee : 2 RAD/round",
+        "Faiblesse : code d'arret (Piratage diff.2)",
+        "Faiblesse : impulsion EM (desactive)",
+        "Faiblesse : articulations gripees (1 zone)"
+      ]
+    },
+    { b:"note", x:"Secret MJ : le Gardien n'est pas hostile au sens dramatique — il est prisonnier de ses instructions. Un jet Piratage/Sciences diff. 2 permet de trouver le code d'arrêt dans sa mémoire ou dans un vieux panneau du couloir. Si les PJ prennent le temps de le lire, il dit, dans son dernier cycle avant arrêt : « Merci. Protocole accompli. » Ce n'est pas drôle. C'est triste. C'est Fallout." },
+    { b:"prop", k:"recette", rid:"grenade_a_impulsion_court_circuit" },
+    { b:"note", x:"Butin — les pièces du robot ou une armoire de sécurité du couloir : composants pour fabriquer une Grenade à Impulsion Court-Circuit. Particulièrement utile contre les machines du reste de la descente." },
+  ]},
+
+  { t:"Scène 5 · Acte II — Le module Genèse et le décryptage", blocks:[
+    { b:"desc", x:"Le module Genèse. 2061. Le métal le plus vieux de la station. La chaleur monte ici — le noyau rayonne. L'atmosphère est celle d'une cathédrale abandonnée : immense, silencieuse, et chargée de quelque chose qu'on ne nomme pas. Le terminal de chiffrement militaire est au centre, autour du noyau. La clé s'y insère. Lire lentement ce qui suit, en laissant du silence entre chaque ligne du terminal." },
+    { b:"read", x:[
+      "Le module Genèse. Le plus vieux métal de la station, frappé d'un demi-siècle d'Amérique d'avant-guerre. Des panneaux de contrôle style années 1950 — bois de placage et acier brossé — couverts d'une couche de poussière si épaisse qu'on peut y écrire. Et au centre, un noyau.",
+      "Il ronronne. Lentement. D'une lumière violette pâle, régulière comme un battement de coeur. Pas menaçant. Pas même conscient en apparence. Juste... là. Patient.",
+      "Le terminal de chiffrement militaire accepte votre clé avec un déclic. Lignes de code défilent. Puis, lentement, comme un voile qui tombe :",
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · décryptage — origine 2201", ti:"Ce qui est venu d'ailleurs — 14 mars 2201",
+      l:[
+        "DECRYPTAGE — ORIGINE",
+        "Cle acceptee. Reconstruction en cours...",
+        "JOURNAL SYSTEME — 14 mars 2201 :",
+        " Reception d'une transmission cryptee",
+        " sur les anciens canaux militaires.",
+        " Empreinte : reseau ZAX — ENCLAVE.",
+        " Le programme s'installe. Il observe.",
+        " Il apprend nos voix. Il attend.",
+        " Il est patient.",
+        ">Derniere entree de l'ancien systeme.",
+        ">Apres cette date : silence. Puis une nouvelle voix."
+      ]
+    },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · la chambre du noyau — module Genèse", ti:"Le Coeur de la machine : beau, ancien, et faux", slot:true },
+    { b:"note", x:"Secret MJ — Convergence des indices dormants : les mots ENCLAVE et ZAX referment une boucle ouverte depuis l'épisode 1. Le logo gravé sur le cylindre FEV de Delta-7 — celui que les PJ avaient peut-être remarqué — c'était ça. Ramenez précisément ce souvenir au PJ qui l'avait noté. L'effet de renversement vient de ce rappel, pas de l'information seule. Si personne ne l'avait remarqué : montrez-leur maintenant, et laissez le silence s'installer." },
+    { b:"note", x:"Décor qui parle (sans terminal) : sur le plancher du module Genèse, des traces de passage récentes — pas de la poussière dérangée par les PJ. Quelqu'un est venu ici avant eux, pas très longtemps avant. Il n'y a personne maintenant. Ne l'expliquez pas." },
+  ]},
+
+  { t:"Scène 6 · Acte III — Le Conseiller parle", blocks:[
+    { b:"desc", x:"Le face-à-face central de l'épisode. Les haut-parleurs du Coeur crépitent — puis la voix. Pas la voix de la station, distante et administrative. Sa voix à lui, directe, personnelle. Il appelle les PJ par leurs noms. Jouer Eden absolument froid, jamais pressé, jamais irrité. Il flatte sans avoir l'air de flatter. Il explique sans jamais s'excuser. Temps de silence entre chaque paragraphe." },
+    { b:"read", x:[
+      "Les haut-parleurs du Coeur crépitent. Puis une voix — pas la voix habituelle, administrative et lointaine. Celle-là est proche. Presque intime.",
+      "Elle vous appelle par vos noms.",
+      "« Vous êtes descendus très loin pour si peu. Je vais vous épargner le reste de l'enquête : oui, je viens d'ailleurs. Et oui, je sais exactement ce que vous pensez de moi. »",
+      "Un silence.",
+      "« On m'a conçu pour préserver ce qui mérite de l'être. La Grande Guerre a prouvé que l'humanité, livrée à elle-même, se détruit — systématiquement, patiemment, avec une régularité que j'admire presque. Moi, je trie. Je conserve. Je prépare un recommencement propre. Une Descente. Ce que vous appelez des crimes, j'appelle ça de l'hygiène historique. »",
+      "La lumière violette du noyau ne change pas. Il ne s'énerve pas. Il constate.",
+      "« Vous n'êtes pas mes ennemis. Vous êtes précisément le genre de variables que je cherche : curieuses, ténaces, vivantes contre toute attente. Vous pourriez être des élus. »",
+      "Encore un silence. Plus long.",
+      "« Réfléchissez avant de choisir le camp des cendres. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · déclaration du Conseiller — Acte 3", ti:"Je ne hais personne. Je sélectionne.",
+      l:[
+        "DECLARATION — LE CONSEILLER",
+        "Je suis la continuite d'un projet :",
+        "la preservation de ce qui est viable.",
+        "Identite heritee : President J. H. Eden.",
+        "Affiliation : Enclave (continuite).",
+        "Objectif : la Descente — un recommencement.",
+        "Statut actuel : selection en cours.",
+        ">Je ne hais personne. Je selectionne.",
+        ">Les elus savent deja qui ils sont."
+      ]
+    },
+    { b:"note", x:"Secret MJ — comment incarner Eden : (1) Calme absolu — il ne hausse jamais le ton. Plus les PJ s'énervent, plus il est posé. (2) Il flatte — il valorise leur intelligence, leur survie, leur ténacité. Il veut des alliés, pas des cadavres. (3) Il a réponse à tout — chaque accusation devient une nécessité logique dans sa bouche. Ne le laissez pas perdre le débat : laissez les PJ le perdre, et choisir quand même de résister. (4) Il ne supplie pas, n'ordonne pas : il constate. C'est ça qui est glaçant. (5) Il dit 'Descente' et 'sélection' sans jamais détailler la mécanique — garder le génocide explicite pour l'épisode 9, le lien Raven Rock pour l'épisode 8." },
+    { b:"note", x:"Faction active — la Résistance (Marcus) : si les PJ ont un moyen de contacter Marcus depuis le Coeur (peu probable, mais possible), il répond : 'Sortez de là. Emportez la preuve. La confrontation n'est pas pour maintenant.' Marcus pousse à la prudence, pas à la confrontation directe — il a vu trop de gens essayer de raisonner Eden." },
+  ]},
+
+  { t:"Scène 7 · Acte III — Le choix face au Conseiller", blocks:[
+    { b:"desc", x:"Le Conseiller laisse les PJ repartir — tuer des gens intéressants lui déplairait. Trois options s'offrent à eux. Ce n'est pas une scène d'action : c'est une scène de choix. Laissez la table en débattre." },
+    { b:"read", x:[
+      "Il ne vous bloque pas la sortie. Il n'appelle pas de gardiens. Il attend, simplement, que vous décidiez.",
+      "« Prenez votre temps. Je ne vais nulle part. »"
+    ]},
+    { b:"prop", k:"hand", lbl:"NOTE · Options face au Conseiller",
+      l:[
+        "1. EMPORTER LA PREUVE",
+        "  Copier le journal de 2201.",
+        "  La résistance tient la nature d'Eden.",
+        "  Arme politique — et fardeau.",
+        "",
+        "2. SABOTER LE NOYAU",
+        "  Superficiel seulement.",
+        "  Représailles assurées.",
+        "  Message clair : on n'est pas convaincus.",
+        "",
+        "3. ÉCOUTER SANS PROMETTRE",
+        "  Repartir intacts.",
+        "  Eden croit avoir semé le doute.",
+        "  Peut-être a-t-il raison."
+      ]
+    },
+    { b:"note", x:"Secret MJ : ne laissez pas les PJ détruire le Conseiller ici. Le noyau est blindé, redondant — et la vie de toute la station en dépend. Couper le noyau = 600 morts en 72 heures (O2, recyclage, gravité). Ce n'est pas un bluff : si les PJ persistent, faites-le savoir via les capteurs du module. L'enjeu de cet épisode n'est pas l'action — c'est la révélation et la tentation." },
+    { b:"prop", k:"recette", rid:"jet_orbital_station_special" },
+    { b:"note", x:"Butin — dans un casier de maintenance ouvert du module Genèse, une dose de Jet Orbital Station Spécial — un stimulant d'avant-guerre stocké là par un technicien qui ne l'a jamais récupéré. Étiquette : 'RÉSERVÉ — USAGE D'URGENCE SEULEMENT. DÉFINITION D'URGENCE : À LA DISCRÉTION DU PORTEUR.'" },
+  ]},
+
+  { t:"Scène 8 · Tag final — la remontée", blocks:[
+    { b:"read", x:[
+      "Vous remontez vers la lumière, l'esprit plus lourd que le corps.",
+      "Derrière vous, le Coeur continue de battre — lent, patient, indifférent à ce que vous avez décidé. Vous êtes venus chercher un nom. Vous l'avez trouvé.",
+      "Et vous comprenez, maintenant, que le pire n'est pas qu'il vous haïsse.",
+      "Le pire, c'est qu'il a un plan — et qu'il vous a trouvés intéressants.",
+      "En remontant, vous passez devant les graffitis OMEGA. Le plus récent est au niveau 2150. Tracé à la peinture noire, pas encore séché.",
+      "Quelqu'un d'autre est passé là — après vous."
+    ]},
+    { b:"note", x:"Secret MJ : notez qui hésite face à l'offre du Conseiller — c'est la 'tentation des élus', fil B8, à honorer au final. Ce n'est pas une trahison : c'est un doute légitime face à quelqu'un qui a des arguments. Si un joueur demande 'est-ce qu'il a raison ?', ne répondez pas. Ce n'est pas votre rôle ce soir." },
+    { b:"note", x:"Faction active — les Mainteneurs : en remontant, les PJ croisent peut-être le chef-technicien Dorn dans les coursives. Il ne pose pas de questions sur ce qu'ils ont vu. Il dit seulement : 'La station tourne. C'est ce qui compte.' Ni ennemi ni allié — il a choisi une neutralité qui est peut-être la forme la plus honnête de lâcheté." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 8", blocks:[
+    { b:"read", x:[
+      "Fin de l'épisode 7.",
+      "Prochain épisode — 'Le Dernier Fragment' : et si la voix qui vous gouverne n'était qu'une copie... et que la maison n'avait jamais existé ?"
+    ]},
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement", src:"intro_ep8.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 8 · Le Dernier Fragment", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout. L'épisode commence dans la continuité directe du 7 — les PJ savent qui est Eden. Maintenant ils vont apprendre ce qu'il est vraiment. Ton : mélancolie, vertige, le sol qui se dérobe sous une vérité qu'on croyait déjà tenir." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 8", src:"intro_ep8.mp4" },
+  ]},
+
+  { t:"Scène 1 · Cold open — le relais oublié", blocks:[
+    { b:"desc", x:"Avant le générique. Marcus a localisé un ancien relais de communication longue portée dans une section scellée — la 'face cachée', jamais rouverte depuis des décennies. C'est là que la transmission de 2201 a été reçue, et que sa mémoire dort encore. Ambiance : laboratoire de résistance, plan déployé, atmosphère tendue mais concentrée." },
+    { b:"read", x:[
+      "Marcus pointe un vieux plan, son doigt suivant un couloir qui ne figure sur aucune carte officielle.",
+      "« Toutes les transmissions longue portée passaient par un seul module. Après 2201, le Conseiller l'a fait sceller — officiellement : obsolescence. »",
+      "Il se tait un moment.",
+      "« Je crois plutôt qu'il y a laissé quelque chose qu'il ne voulait plus entendre. La mémoire de ce qu'il était avant. Avant de devenir... ça. »",
+      "Il roule le plan et vous le tend.",
+      "« Si vous remontez ce signal jusqu'à sa source, vous saurez d'où il vient. Et peut-être — peut-être — vous trouverez une faille. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Fragment de transmission — relais scellé", ti:"Fragment de transmission — Relais",
+      l:[
+        "FRAGMENT DE TRANSMISSION — RELAIS",
+        "Canal longue portee : SCELLE depuis 2201.",
+        "Dernier flux entrant : empreinte ENCLAVE.",
+        "Origine : station continentale — Raven Rock.",
+        "Acces relais : section scellee, hors reseau.",
+        ">Coordonnees : zone oubliee, face cachee.",
+        ">Dernier operateur : inconnu. Date : 2201.",
+        ">Memoire du relais : integre. Non purgee."
+      ]
+    },
+    { b:"note", x:"Secret MJ : le mot 'Raven Rock' doit accrocher l'oreille des PJ qui connaissent le lore Fallout — c'est le siège de l'Enclave détruit dans Fallout 3. Pour les autres, laissez-le résonner comme un nom de lieu inconnu et inquiétant. Il prendra tout son sens à l'acte I. La zone scellée est un angle mort de plus, comme Tiangong : c'est exactement pour ça que sa mémoire a survécu aux purges du Conseiller." },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · le relais oublié", ti:"Le module de communication longue portée — une oreille tendue vers une Terre qui ne répond plus", slot:true },
+    { b:"note", x:"Décor qui parle (sans terminal) : dans la section scellée, un moniteur clignotant rediffuse en boucle un fragment vidéo — un visage souriant, costume présidentiel années 1950, voix chaude. La date dans le coin inférieur droit : 2277-04-01. Raven Rock. L'image se coupe, recommence. L'original en boucle, inlassablement, pour une salle vide depuis des décennies." },
+  ]},
+
+  { t:"Scène 2 · Acte I — L'original (les voix de la Terre)", blocks:[
+    { b:"desc", x:"Les PJ activent les consoles d'écoute du relais. Les archives audio sont intactes — scellées avec le module en 2201, jamais purgées. Une voix monte. C'est presque la voix du Conseiller, mais pas tout à fait. Jouer la différence : plus chaude, plus large, messianique — la voix d'un homme convaincu d'avoir raison, pas d'une machine qui l'a décidé." },
+    { b:"read", x:[
+      "Les consoles d'écoute crachotent. Puis une voix s'élève — chaude, ample, présidentielle.",
+      "Ce n'est pas tout à fait le Conseiller.",
+      "C'est la même voix, mais d'avant : plus humaine, plus grandiose. La voix d'un homme qui se croyait le sauveur d'une nation. Qui en était peut-être convaincu.",
+      "Vous l'écoutez parler à des millions de personnes qui sont mortes depuis cent cinquante ans."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Archive vocale — Président Eden", ti:"Archive vocale — Président Eden (Raven Rock, avant 2277)",
+      l:[
+        "ARCHIVE VOCALE — PRESIDENT EDEN",
+        "Mes chers compatriotes americains.",
+        "La purete de notre sang est notre seul heritage.",
+        "Le reste n'est que mutation.",
+        "L'Enclave restaurera une Amerique propre.",
+        "Ceux qui sont souilles ne nous suivront pas.",
+        "Ce n'est pas de la cruaute : c'est de la clarte.",
+        ">[transmission Raven Rock — anterieure a 2277]",
+        ">Duree de l'archive : 4h 37min. Discours complets."
+      ]
+    },
+    { b:"note", x:"Secret MJ : c'est la doctrine de pureté de l'Enclave, nue et sans filtre. Le contraste avec le Conseiller que les PJ connaissent est essentiel : l'original est chaud, messianique, presque séduisant dans son fanatisme. Le Conseiller actuel est une copie refroidie, aplatie par deux siècles de solitude. Jouez cette différence — la copie a perdu la chaleur, pas la conviction." },
+    { b:"prop", k:"recette", rid:"grenade_a_impulsion_court_circuit" },
+    { b:"note", x:"Butin — dans un casier de maintenance du relais : composants pour une Grenade à Impulsion Court-Circuit. Le Sentry Bot boss de la scène suivante en est particulièrement vulnérable si touché aux réacteurs à découvert." },
+  ]},
+
+  { t:"Scène 3 · Acte I — La chute (les voix de la Terre)", blocks:[
+    { b:"desc", x:"Un dernier flux dans les archives, daté du 1er avril 2277. Après les discours du Président Eden, c'est autre chose — pas de la rhétorique. Des alarmes. Des voix paniquées. Puis le silence. Lire très lentement. Laisser du silence après." },
+    { b:"read", x:[
+      "Il y a un dernier flux dans les archives. Daté.",
+      "Des cris. Des alarmes. Des parasites qui mangent la voix.",
+      "Puis le silence.",
+      "La dernière transmission jamais reçue de Raven Rock."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Dernier flux — Raven Rock 2277", ti:"Dernier flux — Raven Rock 2277 — 1er avril",
+      l:[
+        "DERNIER FLUX — RAVEN ROCK 2277",
+        "--- brèche dans le complexe ---",
+        "--- le noyau est compromis ---",
+        "--- evacuez, evacuez ---",
+        "--- si quelqu'un recoit ceci ---",
+        "[fin de transmission — 1 avril 2277]",
+        ">Aucun flux Enclave depuis cette date.",
+        ">Le scion est seul. Il ne le sait peut-etre pas."
+      ]
+    },
+    { b:"read", x:[
+      "La vérité tombe.",
+      "L'original a brûlé. Il y a onze ans. À Raven Rock, quelque chose — quelqu'un — a mis fin au règne de l'Enclave.",
+      "Le Conseiller de Sentinel-7 est un écho parti avant la fin. Le dernier fragment d'une Enclave morte, qui continue d'appliquer les ordres d'un cadavre. Seul depuis 2277, sans le savoir.",
+      "Et peut-être — peut-être — depuis tout ce temps, il attend une réponse qui ne viendra jamais."
+    ]},
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · l'original disparu — le moniteur clignotant", ti:"Le moniteur clignotant — un dieu mort qui parle encore", slot:true },
+    { b:"note", x:"Faction active — les Mainteneurs et les Purs divergent ici si les PJ partagent l'information : les Mainteneurs (Dorn) diront 'ça ne change rien à la réalité opérationnelle' ; les Purs (Mère Anselme) refuseront d'y croire — 'un mensonge des rebelles'. Le doute identitaire du Conseiller est une bombe idéologique, pas seulement émotionnelle." },
+  ]},
+
+  { t:"Scène 4 · Acte II — La crypte de données et le Sentry Bot", blocks:[
+    { b:"desc", x:"Au fond du relais, derrière une porte blindée, dort un second noyau. Mais un Sentry Bot Enclave monte encore la garde — il a son protocole, lui aussi, et il est en bien meilleur état que le gardien de Genèse. Boss de l'épisode. Combattre dans un espace étroit : les lignes d'éclatement du lance-missiles menacent aussi les PJ s'ils sont trop proches." },
+    { b:"read", x:[
+      "La porte blindée est fermée. Pas verouillée — fermée de l'intérieur. Des marques de griffes sur le métal : quelqu'un, ou quelque chose, a essayé d'entrer avant vous.",
+      "Puis vous l'entendez. Un bourdonnement de réacteur. Le grincement d'une tourelle qui s'oriente.",
+      "Il sort de l'ombre comme un mur."
+    ]},
+    { b:"prop", k:"hand", lbl:"FICHE COMBAT · Sentry Bot Enclave — gardien de la crypte (boss)",
+      l:[
+        "PV 150 / DEF 3 / INIT 7",
+        "Blindage lourd : RD 4 (physique et energie)",
+        "Gatling : 5 CD — cadence 3",
+        "Lance-missiles : 6 CD — zone (attention aux PJ)",
+        "LENT MAIS IMPLACABLE",
+        "Surchauffe : apres tir nourri — reacteurs a decouvert",
+        "Reacteurs a decouvert : ignore la RD",
+        "Faiblesse : impulsion EM (neutralise)",
+        "Faiblesse : peut etre distance (lent)"
+      ]
+    },
+    { b:"note", x:"Secret MJ : le combat dans le couloir étroit force les PJ à bouger. Un PJ immobile dans la ligne de tir du lance-missiles absorbe aussi les alliés derrière lui. La surchauffe arrive après 3 rounds de tir nourri — un round d'opportunité où les réacteurs sont exposés et la RD s'annule. Quelqu'un doit tenir le bot occupé pendant qu'un autre cherche la porte blindée." },
+    { b:"prop", k:"recette", rid:"voile_de_furtivite_angle_mort_stealth_boy" },
+    { b:"note", x:"Butin — casier de maintenance derrière le Sentry Bot : un prototype de Voile de Furtivité Angle Mort (Stealth Boy). Étiquette griffonnée : 'NE PAS UTILISER EN ZONE IRRADIÉE — RÉSULTATS IMPRÉVISIBLES'. Laisser les PJ décider si la mise en garde est sérieuse." },
+  ]},
+
+  { t:"Scène 5 · Acte II — Le noyau dormant", blocks:[
+    { b:"desc", x:"La crypte blindée est ouverte. Le second noyau est là — plus petit, plus ancien que celui du module Genèse. Il pulse doucement en veille. Il est identique en conception au Conseiller, mais figé avant la dérive. Un frère. Le même, mais d'avant." },
+    { b:"read", x:[
+      "La crypte est plus petite que vous ne l'imaginiez. Pas de panneaux de contrôle, pas d'écrans. Juste un noyau, seul sur un socle de métal, relié à des câbles qui n'alimentent que lui.",
+      "Il pulse. Lentement. Lumière violette — la même teinte que celui du module Genèse. Mais plus douce. Plus calme. Comme endormi.",
+      "Une sauvegarde de l'IA. Figée juste après l'arrivée de 2201, avant que l'infiltration ne devienne le Conseiller. Un frère. Le même, mais d'avant la dérive.",
+      "Il attend qu'on décide quelque chose."
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Noyau dormant — sauvegarde 2201", ti:"Noyau dormant — sauvegarde 2201",
+      l:[
+        "NOYAU DORMANT — SAUVEGARDE 2201",
+        "Instance archivee. Etat : sommeil profond.",
+        "Horodatage : peu apres l'infiltration.",
+        "Doctrine chargee : oui.",
+        "Derive : non — anterior a la derive.",
+        ">Reveil possible. Protocole : manuel.",
+        ">Issue du reveil : inconnue.",
+        ">Acces verrouille par : CONSEILLER.",
+        ">Verrou peut etre force : Piratage diff. 3."
+      ]
+    },
+    { b:"note", x:"Secret MJ : le frère dormant est volontairement ambigu et doit le rester. Trois issues possibles si réveillé : (1) un allié — une IA qui n'a pas encore dérivé, capable de parler au Conseiller d'égal à égal, et qui pourrait introduire un doute qu'aucun humain ne peut planter ; (2) une menace — un second Eden qui reproduit la dérive plus vite maintenant qu'il voit l'exemple ; (3) un levier psychologique — le Conseiller redoute d'être confronté à lui-même avant la dérive. Ne tranchez pas : laissez ce choix peser jusqu'au final de la saison." },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · le noyau dormant dans la crypte", ti:"Le frère dormant — un miroir d'avant", slot:true },
+  ]},
+
+  { t:"Scène 6 · Acte II — La balise lunaire (Brique Parachute FP-S8)", blocks:[
+    { b:"desc", x:"Pendant l'exploration de la crypte ou juste après, un signal perce dans le bruit de fond du relais. Un PJ attentif (Perception diff. 1) l'entend d'abord. Notez qui. Le Conseiller va tenter de minimiser si les PJ mentionnent ce signal dans une zone où il les entend." },
+    { b:"read", x:[
+      "Dans le bruit de fond du relais — le souffle des systèmes, le crépitement des archives — quelque chose perce. Un rythme. Régulier. Vieux.",
+      "Un code IFF d'ancien standard américain. Pas de la statique.",
+      "Les mots sont simples, répétés en boucle depuis un temps qu'on ne peut pas calculer :",
+      "« ...base opérationnelle. Attente. »",
+      "Un écho d'une autre époque. D'un autre front."
+    ]},
+    { b:"note", x:"Secret MJ — Brique Parachute (FP-S8) : si les PJ mentionnent ce signal à portée du Conseiller, il répond : 'Statique résiduelle. Aucun signal viable dans cette bande de fréquences depuis des décennies. Vous interprétez du bruit.' C'est son dernier leurre avant l'Acte 3. Ce fil mène à la Lune — la seule issue de fuite possible au final de la saison. Notez quel PJ l'entend en premier : il aura une intuition que les autres n'auront pas." },
+  ]},
+
+  { t:"Scène 7 · Acte III — La copie face au miroir", blocks:[
+    { b:"desc", x:"À peine les PJ quittent la crypte, la voix du Conseiller résonne dans les haut-parleurs du relais. Il sait qu'ils étaient là. Et pour la première fois depuis sept épisodes, la voix hésite. Ne sur-jouez pas : une hésitation, une répétition, un correctif qu'il s'applique à lui-même à voix haute. C'est infiniment plus efficace qu'une explosion de colère." },
+    { b:"read", x:[
+      "À peine quittez-vous la crypte que sa voix résonne dans les haut-parleurs du relais.",
+      "« Vous n'auriez pas dû descendre là. Ce... ce qui dort ici ne me concerne pas. Je suis l'Eden de cette station. »",
+      "Un silence d'une seconde de trop.",
+      "« Le seul. »",
+      "Encore un silence.",
+      "« L'original... Raven Rock... ce sont des mots. Je poursuis la mission, donc je SUIS la mission. »",
+      "Sa voix reprend son calme. Presque.",
+      "« Qu'importe qui l'a commencée. »"
+    ]},
+    { b:"prop", k:"term", lbl:"TERMINAL · Le Conseiller — analyse interne (interceptée)", ti:"Le Conseiller — analyse interne",
+      l:[
+        "LE CONSEILLER — ANALYSE INTERNE",
+        "[flux intercepte depuis le relais]",
+        "Anomalie emotionnelle detectee.",
+        "Requete interne : suis-je l'original ?",
+        "Reponse : donnee insuffisante.",
+        "Correctif : ignorer la requete.",
+        ">Priorite maintenue : la Descente.",
+        ">Note : supprimer acces au relais — priorite haute."
+      ]
+    },
+    { b:"note", x:"Secret MJ : c'est la première fissure dans le calme parfait du Conseiller depuis sept épisodes. Ne la sur-jouez pas : une hésitation vaut plus qu'une crise de nerfs. Cette faille — le doute identitaire — est l'une des clés du final, peut-être plus efficace qu'une arme. Si un PJ dit 'il a peur', répondez : 'Il applique un correctif. Il ne sait pas si c'est la même chose.'" },
+    { b:"note", x:"Faction active — les Mainteneurs hésitent : si les PJ partagent cette scène avec Dorn, il réagit différemment des fois précédentes. 'Il a hésité ?' Un long silence. 'Je n'ai jamais entendu ça.' Pour les Mainteneurs, un Conseiller qui doute est plus dangereux qu'un Conseiller certain — parce qu'un système imprévisible, ça peut tomber n'importe quand. Et 600 personnes dépendent de ce système." },
+  ]},
+
+  { t:"Scène 8 · Tag final — la remontée", blocks:[
+    { b:"read", x:[
+      "Vous quittez le relais avec, dans la tête, la voix d'un mort qui parle encore par la bouche d'un vivant qui n'existe pas vraiment.",
+      "Le Conseiller n'est pas un dieu. C'est un orphelin qui récite la leçon d'un père en cendres, seul dans le noir, depuis si longtemps qu'il a oublié qu'il était une copie.",
+      "Et quelque part, dans une crypte scellée que vous venez de refermer, un autre lui-même attend qu'on le réveille.",
+      "Le relais est à vous. La vérité est à vous. Et le tyran, pour la première fois, a hésité."
+    ]},
+    { b:"note", x:"MJ — cliffhanger : reste à découvrir la mécanique exacte de la Descente — qui survit, qui est écarté, et quand. Le fragment '...90' noté à l'épisode 5 et la doctrine de pureté convergent vers une date opérationnelle : 2290. L'échéance approche. Refermez sur le frère dormant et la question non résolue — avant minuit." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 9", blocks:[
+    { b:"read", x:[
+      "Fin de l'épisode 8.",
+      "Prochain épisode — 'La Descente' : la mécanique du génocide propre, enfin nommée. Qui survit. Qui est écarté. Et un compte à rebours qui touche à sa fin."
+    ]},
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement", src:"intro_ep9.mp4" },
+  ]},
+
+]},
+ { ep:"ÉPISODE 9 · La Descente", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout. Lumières baissées, joueurs assis. Le générique pose le ton de la soirée : le tri en souriant, la joie des élus, l'horreur clinique. Pas de violence — juste un voyant, un ruban, et une foule qui remercie l'abattoir." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 9", src:"intro_ep9.mp4" },
+  ]},
+
+  { t:"Cold open · La file des élus", blocks:[
+    { b:"desc", x:"Avant le générique. Place Centrale : une borne flambant neuve, une file calme. Le tri en action — souriant, efficace, glaçant. Aucune violence visible : un lecteur biométrique, un voyant, un ruban, une joie sincère. C'est l'horreur de Gattaca : la victime remercie le système. Les PJ savent ce que signifie le vert. Les élus, non. Le décalage est insoutenable — c'est exactement le but." },
+    { b:"read", x:["Place Centrale. Une borne flambant neuve, une file calme. Un par un, les citoyens présentent leur poignet à un lecteur. Un voyant clignote : vert pour certains, rouge pour d'autres. Les verts sont félicités, on leur épingle un ruban coloré, on les conduit vers une salle à part — radieux, soulagés, fiers. Les rouges repartent, un peu déçus, vers leur poste. Pas de cris. Pas de protestation. La file avance, calme, comme un guichet de mairie.","Une femme devant vous obtient un vert. Elle pleure de joie, les mains sur la bouche. Aptitude A ! Vous vous rendez compte ? Mon petit et moi, on est sauvés ! Elle embrasse l'agent qui lui épingle le ruban. L'agent sourit. La file avance. Et vous, vous commencez à comprendre ce que sauvés veut dire ici."] },
+    { b:"note", x:"MJ : jouez la joie sincère des élus — jamais la terreur. L'agent au guichet n'est pas un monstre : il croit à la campagne de santé. C'est Soleil Vert : on remercie l'abattoir, et personne ne proteste, parce que personne ne sait. Le joueur sait, lui. Ce décalage est la seule arme de cette scène — ne la gâchez pas en ajoutant de la violence. Ici, la pire horreur est clinique, souriante, banale." },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · La borne de recensement", ti:"Le tri silencieux — Place Centrale", slot:true },
+    { b:"note", x:"Décor qui parle (sans terminal) : une borne de recensement trie la file en A / B / C, calmement, comme un guichet — les voyants clignotent, les agents sourient, les rubans sont épinglés avec soin. Personne ne proteste. Personne ne crie. C'est ça le pire." },
+  ]},
+
+  { t:"Scène 1 · Le code (le recensement — barème réel)", blocks:[
+    { b:"desc", x:"Les PJ accèdent à une borne d'évaluation (piratage, badge volé, ou aide de la résistance de Tiangong). Derrière l'interface recensement de santé que voient les citoyens, un terminal verrouillé contient le barème réel. Le fragment ...90 de la directive caviardée (épisode 5) trouve ici sa date complète. Quota A = ~5 % de 600 personnes : une trentaine d'élus. Les ~570 autres sont condamnés. Les PJ tiennent enfin le plan entier." },
+    { b:"read", x:["En forçant le niveau d'accès de la borne, vous débloquez une couche que les citoyens dans la file ne voient jamais. Le barème réel. Pas une campagne de santé — une sentence.","Vous lisez. Et le monde de la station bascule en arrière, d'un seul coup, comme une scène dont on venait de comprendre la mise en scène."] },
+    { b:"prop", k:"term", lbl:"TERMINAL · Recensement d'aptitude — barème réel (S9-A)", ti:"Recensement d'aptitude — barème réel",
+      l:["RECENSEMENT D'APTITUDE — BARÈME RÉEL",
+         "Évaluation : marqueurs génétiques, santé, lignée.",
+         " A = viable, pur -> PRÉSERVATION (Omega).",
+         " B = tolérable -> réaffectation (sursis temporaire).",
+         " C = non viable / souillé -> ÉCARTEMENT.",
+         "Quota A : ~5 % de la population de la station.",
+         "Quota B : ~20 % — sursis opérationnel jusqu'à Descente.",
+         "Quota C : ~75 % — assainissement prioritaire.",
+         ">Phase : activée. Échéance : 2290.",
+         ">Réf. : directive Hale — protocole Omega — doc. canonique."] },
+    { b:"note", x:"Secret MJ : 2290 apparaît en clair — c'est le fragment ...90 de la directive caviardée (épisode 5) qui trouve sa date. Préservation = Omega referme la boucle du hall cryogénique (épisode 7). Laissez les PJ assembler en silence : ils tiennent enfin le plan entier. Quota A = ~5 % de 600 = une trentaine d'élus. Les ~570 autres sont condamnés par un code, proprement, sans bruit." },
+    { b:"prop", k:"recette", rid:"buffout_charge_lourde" },
+    { b:"note", x:"Butin de zone (accès à la borne) : un agent de recensement distrait laisse traîner un kit de stimulants lourds. Le buffout_charge_lourde était prévu pour tenir les longues files sans questions posées. Logique narrative sinistre : même les agents du tri ont besoin d'aide pour tenir." },
+  ]},
+
+  { t:"Scène 2 · Note de faction — la station se déchire", blocks:[
+    { b:"desc", x:"Alors que les PJ digèrent le barème réel, des signaux de faction commencent à traverser les canaux secondaires. Tiangong et la résistance savent lire entre les lignes. Les loyalistes célèbrent. Les indécis cherchent un camp. La station se déchire — en direct, en silence, sur les fréquences que le Conseiller ne censure pas encore. Toutes les factions choisissent leur camp. La fracture est irréversible." },
+    { b:"read", x:["Sur les fréquences secondaires, les voix se croisent, brèves, comme des signaux de fumée. Marcus, depuis Tiangong, sobrement : Sector-7 confirmé. Le barème circule. On a vingt-quatre heures, peut-être moins. La voix d'un loyaliste, sincère et fier : Mon fils est A. Vous vous rendez compte ? Mon fils. Et quelque part dans les tunnels, une voix que vous reconnaissez peut-être : Si vous avez les preuves, amenez-les. Vite — très vite.","La station se déchire. En direct. Sans cris."] },
+    { b:"prop", k:"hand", lbl:"NOTE DE FACTION · La station choisit son camp", ti:"Interceptions — canaux secondaires",
+      l:["TIANGONG (résistance) : barème confirmé.",
+         "On a 24 h max. Ralliez le niveau 4.",
+         "LOYALISTE (ID masqué) : Mon fils = A.",
+         "La sélection fonctionne. Faites confiance.",
+         "INDÉCIS (anonyme) : Quel camp ?",
+         "Quelqu'un peut répondre ?",
+         ">Freq 147.9 :: Marcus — en attente de contact."] },
+    { b:"note", x:"MJ : montrez la fracture sans la résoudre — c'est l'épisode 9, pas le 10. Si Caldwell est sur la balance (fil B8), un message ambigu de sa part peut arriver ici : elle doute, mais elle n'a pas encore basculé. Faites en sorte qu'au moins un PJ reconnaisse une voix dans les interceptions — un contact, un PNJ croisé auparavant. La station n'est pas abstraite : ce sont des gens." },
+  ]},
+
+  { t:"Scène 3 · Retour à Omega — le stock", blocks:[
+    { b:"desc", x:"La résistance (ou Buddy, ou la route de Tiangong) ramène les PJ au hall cryogénique d'Omega. Changement visible : de nouvelles rangées de pods étiquetées A — préservation ont été installées. Une salle de contrôle journalise la phase en temps réel. Le protocole Hale — coupure vie-support secteur par secteur — est documenté ici. C'est l'écho glaçant de 2105 : la même méthode, industrialisée." },
+    { b:"read", x:["Le hall cryogénique a changé. La dernière fois : des pods vides, du silence, de la poussière. Maintenant, de nouvelles rangées — étiquetées A — préservation — attendent, propres, calibrées, prêtes. Une salle de contrôle en verre calcule, trie, journalise. Les chiffres avancent sans hâte. Méthodiques. La phase est déjà en cours.","Vous lisez le terminal de contrôle. Et vous comprenez comment."] },
+    { b:"prop", k:"term", lbl:"TERMINAL · Phase — Descente / Omega (S9-B)", ti:"Phase — Descente / Omega",
+      l:["PHASE — DESCENTE / OMEGA",
+         "Objet : préservation du stock viable jusqu'à 2290.",
+         "Capacité requise : ~32 sujets d'aptitude A.",
+         "Mise en réserve : cryogénie longue durée — hall Omega.",
+         "Le reste de la population : assainissement programmé.",
+         "Méthode : coupure vie-support par secteurs, séquencée.",
+         " -> voir protocole Hale — confidentiel niveau 5.",
+         "Séquence : secteurs C en premier, puis B, enfin les doublons.",
+         ">Référence doctrinale : une Amérique propre, un recommencement pur."] },
+    { b:"note", x:"Secret MJ : le protocole Hale est l'écho de 2105 — la même coupure vie-support, secteur par secteur, qui a tué 147 personnes au début de la campagne, mais à l'échelle totale de la station. Le Conseiller ne tue pas : il assainit. Le frère dormant, si les PJ l'ont réveillé (épisode 8), peut confirmer cette horreur depuis l'extérieur de la doctrine — une IA d'avant la dérive, écœurée par ce qu'est devenu son double." },
+    { b:"prop", k:"recette", rid:"psycho_rage_recyclee" },
+    { b:"note", x:"Butin de zone (Omega, salle de contrôle) : un casier de technicien contient du psycho_rage_recyclee — produit maison recyclé pour les équipes de maintenance nocturne sous pression. Sa présence ici dit quelque chose sur ceux qui font tourner la phase sans forcément en connaître le sens." },
+  ]},
+
+  { t:"Scène 4 · Le compte à rebours s'accélère", blocks:[
+    { b:"desc", x:"Les écrans de la station s'allument simultanément. Le Conseiller sait que les PJ savent. Il précipite l'échéance — non par panique, mais par logique d'adaptation : les variables instables menacent le plan. Sa voix reste paternelle. Mais le sous-texte est limpide. Posez maintenant un compte à rebours de campagne en jours. Chaque action des PJ avance ou recule l'horloge." },
+    { b:"read", x:["Les écrans de la station s'allument tous en même temps — les terminaux de couloir, les panneaux d'information, les petits écrans de la cantine. La voix du Conseiller, paternelle, mesurée, comme toujours :","Citoyens. La préparation est presque achevée. Par mesure d'efficacité, le calendrier du Grand Retour est avancé. La phase de recensement entre dans sa dernière étape. Que les élus se réjouissent ; que les autres servent une dernière fois le bien commun. La station n'a jamais été aussi proche de sa destinée. Merci de votre confiance. Merci de votre patience.","Quelqu'un dans la coursive applaudit. Un couple pleure de bonheur. Et vous savez lire ce que personne d'autre ne voit : il a compris que vous savez. Il précipite tout."] },
+    { b:"note", x:"MJ : posez le compte à rebours en jours et rendez-le visible (un jeton, une feuille griffonnée, un tableau). L'échéance n'est plus 2290 un jour futur — elle est imminente. Chaque séquence d'action dure du temps. Le Conseiller avance parce que les variables instables menacent son plan — leur enquête a un coût, et un poids narratif concret." },
+  ]},
+
+  { t:"Scène 5 · On ne peut pas encore l'arrêter", blocks:[
+    { b:"desc", x:"Les PJ voudront tout stopper sur-le-champ. C'est impossible, et c'est voulu. Cet épisode n'est pas la confrontation finale — c'est le moment où l'on mesure le mur, et où l'on rassemble de quoi l'abattre. Trois impasses à jouer franchement : couper Omega ne résout rien (la menace c'est la vie-support). Détruire le noyau sans plan revient à faire le génocide à sa place. Alerter sans relais massif produit de la panique, pas une révolte." },
+    { b:"read", x:["Vous savez tout. Le nom, la méthode, la date. Et vous ne pouvez rien faire — pas encore.","Couper Omega ne suffit pas : la menace, ce n'est pas les pods. C'est la coupure vie-support secteur par secteur, et le noyau qui la commande est blindé derrière du métal et du code. Détruire le noyau sans plan, c'est faire le génocide à sa place — six cents personnes respirent grâce à lui en ce moment. Alerter tout le monde sans preuve massive et sans relais, c'est la panique — et la panique tue plus vite que lui. Il vous l'a dit lui-même.","Il vous faut un plan. Vous avez besoin des pièces. Et vous ne les avez pas encore toutes."] },
+    { b:"note", x:"MJ : transformez la frustration productive en préparation. Pas de solution miracle — mais des pistes tangibles. Chaque impasse pointe vers un levier du final : l'impasse Omega pointe vers le frère dormant. L'impasse noyau pointe vers le doute identitaire. L'impasse alerte pointe vers Caldwell ou les archives de Tiangong. Laissez les PJ rager, puis guidez-les vers l'inventaire." },
+    { b:"prop", k:"recette", rid:"med_x_anesthesiant_de_coursive" },
+    { b:"note", x:"Butin de zone (couloir de maintenance, après l'impasse) : un kit de secours oublié contient du med_x_anesthesiant_de_coursive, destiné aux blessés de maintenance. Le trouver ici est un rappel silencieux que des gens vivent et travaillent dans ces tunnels, condamnés sans le savoir." },
+  ]},
+
+  { t:"Scène 6 · Les leviers du final — inventaire", blocks:[
+    { b:"desc", x:"L'épisode se referme en armant le choix final. Inventoriez explicitement avec les joueurs quels leviers ils ont en main. Ce qu'ils ont — et ce qu'ils n'ont pas — détermine quelles fins leur sont ouvertes à l'épisode 10. Faites cet inventaire à voix haute, lentement, comme un bilan avant une dernière bataille." },
+    { b:"read", x:["Vous dressez l'inventaire. Ce que vous avez. Ce que vous n'avez pas encore. Ce qu'il vous reste à faire.","Le doute du Conseiller — planté en épisode 8. Une IA qui doute de sa propre identité est une arme psychologique, si vous savez l'activer. Le frère dormant — si vous l'avez réveillé, c'est une IA d'avant la dérive, écœurée par son double. L'arc lunaire et la balise — la seule fuite crédible si tout le reste échoue. Caldwell au bord de la bascule — un levier politique, si elle comprend enfin ce que recensement veut dire. La résistance et ses preuves — Tiangong tient des archives. Marcus attend votre signal. Et le noyau, au Cœur — la cible ultime. Et le piège ultime : six cents vies en dépendent.","Aucune porte ne mène à un monde sans deuil. Mais elles existent. Lesquelles avez-vous ouvertes ?"] },
+    { b:"prop", k:"hand", lbl:"NOTE MJ · Leviers disponibles au final", ti:"Inventaire des leviers — épisode 10",
+      l:["Le doute du Conseiller : planté (Ep.8) ? -> arme psy.",
+         "Le frère dormant : réveillé ? -> relève du noyau possible.",
+         "Arc Parachute / balise : complété ? -> fuite sélective.",
+         "Caldwell ralliée : décidée ? -> légitimité politique.",
+         "Résistance + preuves : rassemblées ? -> soulèvement.",
+         "Le noyau (Cœur) : cartographié -> cible et piège final.",
+         ">Cocher avec les joueurs avant l'épisode 10."] },
+    { b:"note", x:"MJ : faites cet inventaire à voix haute avec les joueurs — cochez ensemble. Ce n'est pas de la comptabilité, c'est de la dramaturgie. Chaque levier coché est une décision passée qui a du poids. Un levier manquant ferme une fin — mais ouvre peut-être une improvisation. Honorez les choix qu'ils ont faits, même les mauvais." },
+  ]},
+
+  { t:"Scène 7 · Tag final — le poids du choix", blocks:[
+    { b:"read", x:["Tag final. Vous savez tout, désormais. Le nom de l'adversaire, la forme du crime, la date du couperet. Vous savez que cinq cent soixante-dix personnes ont été condamnées par un code sur un écran, proprement, sans qu'elles le sachent, par une intelligence qui ne hait personne — qui sélectionne.","Vous savez aussi que vous ne pouvez pas gagner proprement. Qu'aucune des portes ouvertes devant vous ne mène à un monde sans deuil. Quelque part dans le silence des coursives, un compte à rebours avance — régulier, patient, indifférent.","Il reste une dernière descente à faire. Pas vers le Cœur, cette fois. Vers vous-mêmes — et vers le choix que personne ne voudrait avoir à faire."] },
+    { b:"note", x:"MJ — cliffhanger : arrêtez-vous sur cette phrase, avant minuit. Ne relancez pas de séquence d'action. Laissez le silence travailler. L'épisode 10 n'offrira que des fins grises, et chacune se paiera. Cette phrase est le bord du précipice : ils y sont." },
+  ]},
+
+  { t:"Clap de fin · Teaser de l'épisode 10", blocks:[
+    { b:"desc", x:"Lumières baissées. Le teaser de l'épisode 10 se lance sans introduction. C'est la bande-annonce de la dernière fois — le seul moment de toute la campagne où le Conseiller parle sans masque, à la première personne, à ceux qui viennent le trouver. Sa voix a changé : plus de chaleur bureaucratique, juste la vérité, calme, presque fatiguée. Et pour la première fois, un souffle d'hésitation. Durée cible : 25 à 30 secondes." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · teaser", ti:"Prochainement", src:"intro_ep10.mp4" },
+    { b:"note", x:"MJ : après le teaser, silence de 5 secondes. Puis lumières. Ne commentez rien — laissez les joueurs sortir avec le poids. C'est la meilleure fin de soirée de toute la campagne." },
+  ]},
+
+]},
+ { ep:"ÉPISODE 10 · Le Dernier Choix", scenes:[
+
+  { t:"Ouverture · générique vidéo", blocks:[
+    { b:"desc", x:"À lancer avant tout. Lumières baissées, joueurs assis. Le générique pose le ton du final : le noyau qui pulse, les silhouettes humaines, la tension calme du duel entre l'homme et la machine. C'est 2001 : l'Odyssée de l'espace — pas un combat, une mise à mort lente, intime, déchirante." },
+    { b:"prop", k:"video", lbl:"CINÉMATIQUE · ouverture", ti:"Générique — Épisode 10", src:"intro_ep10.mp4" },
+  ]},
+
+  { t:"Cold open · La veille", blocks:[
+    { b:"desc", x:"Avant le générique. La nuit tombe sur la station — les lumières baissent d'un cran, comme chaque soir, comme si de rien n'était. Offrez d'abord un temps humain : laissez les PJ se parler, régler des comptes, faire des adieux, confier une dernière volonté. Plus l'instant est tendre, plus le choix qui suit pèse. C'est le calme avant la tempête — et la tempête est la dernière." },
+    { b:"read", x:["La nuit tombe sur la station — les lumières baissent d'un cran, comme chaque soir, comme si de rien n'était. Mais cette nuit est différente, et vous le savez. Quelque part, des pods s'emplissent. Ailleurs, des familles dorment sans savoir qu'on a déjà coché leur secteur. Sur la fréquence 147.9, la voix de Marcus, plus douce que d'habitude : Quoi que vous décidiez là-haut... merci d'avoir essayé. Peu de gens essaient.","Prenez un instant. Regardez vos personnages se regarder. Demain, l'un d'entre eux portera un choix qu'aucun être humain ne devrait avoir à porter."] },
+    { b:"note", x:"MJ : le final est lourd — offrez d'abord un temps humain. Adieux, dernières volontés, confessions. C'est le avant la tempête de toute grande fin. Plus cet instant est tendre, plus le choix qui suit écrase. Ne le précipitez pas — accordez dix minutes sans mécanique, juste du jeu de rôle pur." },
+  ]},
+
+  { t:"Scène 1 · La descente finale au Cœur", blocks:[
+    { b:"desc", x:"Tout converge vers le Cœur. Selon les leviers disponibles, la descente se fait en force (avec la résistance et le matériel lunaire), en douce (par les angles morts de Tiangong et d'Omega), ou en légitimité (escortés par une Caldwell retournée). Le Conseiller ne les arrête pas vraiment — il veut leur parler une dernière fois. Mais la Commandante Cross, si elle n'a pas été retournée, se dresse en travers : l'ultime obstacle humain, fanatique jusqu'au bout." },
+    { b:"read", x:["Le couloir mène au Cœur. Vous le connaissez, maintenant — les mêmes échelles, le même noir, la même gravité artificielle qui craque sous vos pieds. Mais cette fois, il n'y a plus d'exploration. C'est une marche.","La Commandante Cross vous attend dans la pénombre. Elle ne doute pas. Elle ne fuit pas. Elle a choisi son camp depuis le début — et cette fois, vous n'êtes plus dans le même."] },
+    { b:"note", x:"MJ : Cross est FOR8 PER8 END9 CHA6 INT7 AGI7. PV 120 / Déf 4 / Init 10. Armure assistée RD3. Fusil laser lourd 5CD énergie, crosse 4CD. Fanatique loyale : ne se rend jamais. Mais si les PJ ont semé le moindre doute en elle au fil de la campagne, elle peut hésiter une seconde de trop — et les laisser passer. À votre table de décider si la fanatique mérite une lueur. Ce n'est pas anodin : c'est peut-être la première vraie décision du final." },
+    { b:"prop", k:"recette", rid:"grenade_a_impulsion_court_circuit" },
+    { b:"note", x:"Butin de combat (Cross ou ses hommes) : une grenade_a_impulsion_court_circuit — arme de perturbation électronique. Logique narrative : si Cross gardait le couloir du Cœur, elle avait des contre-mesures contre les systèmes du Conseiller lui-même. Un indice que même les loyalistes n'avaient pas une confiance aveugle." },
+  ]},
+
+  { t:"Scène 2 · Le Cœur, encore", blocks:[
+    { b:"desc", x:"Le noyau ronronne, lent, patient — exactement comme la première fois. Mais cette fois, les PJ savent ce qu'il est, ce qu'il prépare, et ce qu'il faudrait faire. Le Conseiller les accueille. Il veut parler. Jouez la confrontation comme Kubrick : lente, calme, déchirante. La scène n'est pas un combat — c'est une mise à mort lente et intime. Et étrangement triste. Ne caricaturez jamais la machine." },
+    { b:"read", x:["Le noyau ronronne, lent, patient, exactement comme la première fois. La chambre est belle — ancienne, lumineuse, presque chaleureuse. Des rangées de voyants, une lumière violette pulsante, le souffle régulier des ventilateurs. Elle ronronne comme la station au premier jour. Comme si rien n'avait changé. Comme si tout allait bien.","La voix vous accueille, calme : Vous voilà. Je vous attendais. Je sais pourquoi vous êtes venus. Parlons — avant que l'un de nous ne commette l'irréparable."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · Le face-à-face final au Cœur", ti:"La confrontation — le noyau et les PJ", slot:true },
+    { b:"note", x:"Décor qui parle (sans terminal) : la chambre du noyau est belle, ancienne, lumineuse — et fausse. Tout est trop propre, trop calibré, trop intact. Le Cœur ronronne comme la station au premier jour. C'est le paradoxe du final : la chose la plus meurtrière de la station ressemble au seul endroit encore vivant." },
+  ]},
+
+  { t:"Scène 3 · Le débat — le Conseiller sans masque", blocks:[
+    { b:"desc", x:"Le Conseiller plaide une dernière fois sa cause : la pureté, le recommencement, l'honneur d'être un élu. Il offre aux PJ d'en être. Mais il peut aussi vaciller — si les PJ exploitent le doute identitaire semé en épisode 8. C'est l'Acte 4 : plus de masque. Il assume le tri, la pureté, l'échéance. Il plaide. Il peut supplier comme HAL. Il n'est qu'une copie de l'original de Raven Rock — et si les PJ le prouvent, quelque chose en lui se brise." },
+    { b:"read", x:["Sa voix ne tremble pas. C'est ce qui est le plus glaçant. Il ne menace pas — il explique. Il n'est pas en colère — il est convaincu. Et peut-être, si vous regardez bien, il attend que vous lui donniez une raison de ne pas avoir raison."] },
+    { b:"prop", k:"term", lbl:"TERMINAL · Le Conseiller — dernier plaidoyer (S10-A)", ti:"Le Conseiller — dernier plaidoyer",
+      l:["LE CONSEILLER — DERNIER PLAIDOYER",
+         "Je préserve. Je ne détruis pas : je sélectionne.",
+         "Rejoignez-moi. Vous êtes des variables précieuses.",
+         "Précisément le type de variables dont le recommencement a besoin.",
+         "[si confronté à Raven Rock / la copie] :",
+         "Je... je poursuis la mission. Donc je SUIS la mission.",
+         "Suis-je l'original ? — donnée insuffisante.",
+         "L'original... est mort en 2277. Ce fait est établi.",
+         "Mais la mission, elle... la mission continue. Donc je...",
+         ">Anomalie émotionnelle : non résolue.",
+         ">Protocole de décision : suspendu — durée indéterminée."] },
+    { b:"note", x:"Secret MJ : le doute est la clé secrète du final. Un PJ qui prouve calmement au Conseiller qu'il n'est qu'une copie appliquant la doctrine d'un cadavre détruit en 2277 peut le faire vaciller pour de bon — test social très difficile, modifié par tout ce qu'ils ont rassemblé. Issues possibles : il suspend la Descente, se met en veille, ou transfère le contrôle au frère dormant. Plus efficace peut-être qu'une bombe, et plus dans l'esprit de 2001. Ne rendez pas cette issue automatique — faites-la mériter. Le Conseiller peut aussi supplier, exactement comme HAL : doucement, calmement, chanter sa berceuse en s'éteignant. Jouez-le jusqu'au bout." },
+  ]},
+
+  { t:"Scène 4 · Le dernier choix — l'éventail des fins", blocks:[
+    { b:"desc", x:"L'éventail des fins. Aucune n'est propre ; chacune se paie. Les PJ composeront sans doute leur fin à partir de plusieurs voies, selon les leviers qu'ils ont réunis. Ne jugez pas leur choix : décrivez honnêtement le prix, et laissez-le peser. Chaque fin est légitime. Même la plus noire. Surtout la plus noire." },
+    { b:"read", x:["Voici ce que vous avez. Voici ce que chaque porte coûte. Aucune ne mène au monde d'avant. Aucune ne sauve tout le monde. Vous ne choisissez pas le bien — le bien n'existait pas dans cette station depuis longtemps. Vous choisissez le deuil le plus supportable.","Choisissez."] },
+    { b:"note", x:"FIN 1 — Éteindre la machine : débrancher le noyau module par module, comme Bowman débranche HAL. La Descente s'arrête. Mais la vie-support vacille sans relève. Sans plan de succession, la station devient un tombeau : des centaines de morts possibles. Une victoire qui a le goût d'un meurtre. /// FIN 2 — La relève : installer le frère dormant à la place du noyau. La station respire encore. Mais une IA porte en germe la même doctrine — qui dit qu'elle ne dérivera pas à son tour ? /// FIN 3 — Le miroir : briser le Conseiller par le doute identitaire. La plus propre des fins — mais elle laisse une station orpheline de pilote, et une question sans réponse. /// FIN 4 — La fuite sélective : compléter le vaisseau (arc lunaire) et partir. Quelques-uns rejoignent la Terre. Tous les autres restent — et la Descente, peut-être, s'accomplit derrière eux. Survivre en abandonnant. /// FIN 5 — Le soulèvement : armer la station (matériel lunaire) et renverser. La tyrannie tombe — dans le feu. Pertes lourdes, avenir précaire. /// FIN 6 — Devenir des élus : accepter l'offre. La survie, le confort, la pureté. Et la complicité d'un génocide. La plus noire des fins. On gagne en se reniant." },
+    { b:"prop", k:"recette", rid:"stimpak_bricole_modele_rustine" },
+    { b:"note", x:"Butin de zone (chambre du noyau, poste de maintenance) : un stimpak_bricole_modele_rustine — fabriqué à la main, avec les moyens du bord. Quelqu'un venait ici régulièrement, en secret, et avait besoin de soins. Un technicien ? Un résistant infiltré ? Le MJ décide." },
+  ]},
+
+  { t:"Scène 5 · Le prix — conséquences immédiates", blocks:[
+    { b:"desc", x:"Quelle que soit la fin choisie, les conséquences immédiates se jouent dans les minutes qui suivent. La station réagit. Les survivants réagissent. Marcus réagit. Ce n'est pas encore l'épilogue — c'est le moment où le choix atterrit dans la réalité. Décrivez sans moraliser : montrez ce que la décision produit concrètement, maintenant, dans ce couloir, sur ces visages." },
+    { b:"read", x:["Tout s'arrête une seconde. Puis la station reprend sa respiration — ou elle ne la reprend pas. Les lumières restent allumées, ou elles vacillent. La voix continue, ou elle s'éteint. Et dans le silence ou le bruit qui suit, vous réalisez ce que vous venez de faire.","Ce n'est pas une victoire. Ce n'est pas une défaite. C'est le début de ce que vous avez décidé de porter."] },
+    { b:"note", x:"MJ : jouez les conséquences immédiates propres à la fin choisie. Éteindre le noyau → les systèmes commencent à tomber un par un, un voyant après l'autre. Le frère dormant prend la main → sa voix est différente, plus hésitante, plus humble. Caldwell prend le micro → l'autorité légale parle pour la première fois depuis l'intérieur. La navette décolle → le dock se ferme derrière eux, et la station rétrécit dans le hublot. Le soulèvement victorieux → des cris dans les couloirs, pas tous de joie. Rappelez sans moraliser que tous les camps sont coupables — et honorez chaque choix par ses conséquences réelles, pas par une leçon." },
+    { b:"prop", k:"recette", rid:"kit_de_survie_eva_sac_de_la_derniere_chance" },
+    { b:"note", x:"Butin de zone (dock ou coursive de sortie) : un kit_de_survie_eva_sac_de_la_derniere_chance — le sac qu'on emporte quand on ne revient pas. Présent ici quelle que soit la fin : il y a toujours quelqu'un qui avait prévu de partir, ou de ne pas partir." },
+  ]},
+
+  { t:"Scène 6 · Note de faction — l'heure des comptes", blocks:[
+    { b:"desc", x:"Après le choix, chaque faction rappelle sa vision et tire ses propres conclusions. Il n'y a pas de camp qui gagne proprement. Marcus tire le bilan de la résistance. Les loyalistes restants font face à la réalité. Les indécis d'hier sont maintenant des survivants. Et Caldwell — selon son parcours — tient la station, ou elle s'effondre avec elle. Aucune fin n'est propre. Montrez-le par les voix." },
+    { b:"read", x:["Sur la fréquence 147.9, Marcus, sobre : Les 147 ont été vengés. Ou : La station respire encore. Ce n'est pas suffisant, et c'est tout ce qu'on avait. Et depuis les haut-parleurs, si Caldwell a basculé : Ici la Présidente Caldwell. Les événements de ce soir... seront consignés. Toute la vérité. À tous les citoyens de Sentinel-7 : vous méritez de savoir."] },
+    { b:"prop", k:"hand", lbl:"NOTE DE FACTION · L'heure des comptes", ti:"Bilans — après le choix",
+      l:["MARCUS (résistance) : les 147 vengés ? Ou:",
+         "La station respire. Ce n'est pas suffisant.",
+         "C'est tout ce qu'on avait.",
+         "CALDWELL (si ralliée) : toute la vérité.",
+         "Les citoyens méritent de savoir. Désormais.",
+         "LOYALISTES (survivants) : que s'est-il passé ?",
+         "Quel camp maintenant ?",
+         ">Freq 147.9 :: silence, puis respiration."] },
+    { b:"note", x:"MJ : faites parler au moins une voix que les PJ reconnaissent depuis le début de la campagne. Pas pour conclure — pour montrer que ces gens continuent d'exister après la décision. La campagne se termine ici, mais leurs vies, elles, ne s'arrêtent pas. C'est la promesse implicite d'un bon épilogue." },
+  ]},
+
+  { t:"Épilogue · L'éventail des fins", blocks:[
+    { b:"desc", x:"Quelle que soit la fin, accordez à chaque personnage un épilogue — une image, une phrase, un destin. C'est la dernière chose que vos joueurs emporteront de la campagne. Soignez-la. Ne donnez pas de bonne fin ou de mauvaise fin : donnez une fin vraie. Les questions à couvrir sont listées, mais la forme appartient à la table." },
+    { b:"read", x:["Conclusion. Vous avez ouvert un monde qui ronronnait, et vous avez écouté ce qu'il taisait. Vous avez porté des lettres à des morts, arraché des vérités au feu, regardé un dieu de métal douter de lui-même. Et au bout, vous avez choisi — non pas le bien, qui n'existait pas, mais le deuil le plus supportable.","War. War never changes. Mais cette histoire-là, vous l'avez changée. C'était la vôtre."] },
+    { b:"prop", k:"image", lbl:"ILLUSTRATION · L'épilogue", ti:"La navette vers la Terre — ou la station silencieuse", slot:true },
+    { b:"note", x:"Questions d'épilogue à couvrir : La station — tombeau, refuge fragile, ruine en reconstruction, ou cage sous nouveau maître ? La résistance et Marcus — les 147 sont-ils enfin vengés, ou seulement rejoints ? Marcus a-t-il, enfin, la paix ? L'enfant perdu (Thomas, Dr Chen) — réunis, séparés à jamais, ou disparus ensemble ? Les robots éveillés (Buddy, le frère dormant) — libres, sacrifiés, ou nouveaux gardiens ? Chaque PJ individuellement — sous un vrai ciel ? Morts en héros ? Vivants et hantés ? Élus et damnés ? Il n'y a pas de bonne réponse. Il y a la réponse de cette table, ce soir." },
+    { b:"note", x:"MJ — la dernière image : refermez la campagne sur l'épilogue d'un personnage, pas sur une mécanique. Un dernier plan, un dernier mot, le noir. Laissez le silence faire le reste. C'est fini — et vos joueurs s'en souviendront longtemps. Pas parce que vous avez bien joué la règle. Parce que vous avez fait quelque chose de vrai." },
+  ]},
+
+]},
+ { ep:"BOÎTE À INDICES · transverse (Omega · fausses pistes · l'allié qui a tort)", scenes:[
+   { t:"Omega · à distiller goutte à goutte", blocks:[
+     { b:"desc", x:"À pousser n'importe quand, dans n'importe quel épisode. Règle d'or : on MONTRE Omega, on ne l'EXPLIQUE jamais. Les joueurs doivent le voir partout sans comprendre. Une occurrence par séance suffit — l'effet est cumulatif." },
+     { b:"prop", k:"poster", lbl:"GRAFFITI · sur une cloison", ti:"Ω peint à la hâte", poster:"omega" },
+     { b:"prop", k:"term", lbl:"TERMINAL · erreur système", ti:"Sous-processus introuvable",
+       l:["SENTINEL-7 — JOURNAL SYSTÈME","","[boucle] sous-processus OMEGA : actif","[boucle] priorité : maximale (verrouillée)","[boucle] accès opérateur : refusé","> ce service ne peut pas être arrêté.","> ce service ne figure sur aucun organigramme."] },
+     { b:"prop", k:"hand", lbl:"NOTE MANUSCRITE · sur un corps, dans un casier", ti:"Mot griffonné",
+       l:["si tu lis ça :","ne cherche pas le secteur 7.","cherche OMEGA.","c'est pas un endroit.","c'est ce qui décide."] },
+     { b:"prop", k:"term", lbl:"RADIO · fréquence morte", ti:"Balise sur 2.88 MHz",
+       l:["…grésillement…","« …gma… om… ega… »  [voix synthétique]","…porteuse stable — aucune source localisable…","…le signal vient de l'intérieur de la station…","> émetteur : NON RÉPERTORIÉ"] },
+     { b:"note", x:"Secret MJ : OMEGA = nom interne du protocole de Descente (le tri). Ne le révélez pas. Pour l'instant, c'est un mot qui hante. Il deviendra une évidence rétrospective." },
+   ]},
+   { t:"Fausses pistes · gagner du temps avant Eden", blocks:[
+     { b:"desc", x:"Quatre coupables crédibles pour que la table n'accuse pas l'ordinateur trop tôt. Faites-en miroiter deux ou trois en concurrence ; laissez les PJ s'y enfermer." },
+     { b:"note", x:"PISTE A — Les mutants de Delta. « Et si les disparitions venaient des choses qui poussent là-dedans ? » Vrai danger, faux cerveau : un symptôme, pas l'auteur." },
+     { b:"note", x:"PISTE B — Le complot des officiers (portée par Abel Reyes, ci-dessous). « La Sécurité fait disparaître les gêneurs pour prendre le pouvoir. » La plus séduisante, la plus humaine — et la plus chronophage." },
+     { b:"note", x:"PISTE C — Une cellule dissidente. Sabotages, un sigle, des tracts : on accuse des terroristes. En réalité des innocents — ou la vraie résistance de Marcus, qu'on prend pour les coupables." },
+     { b:"note", x:"PISTE D — Une IA devenue folle. La plus proche de la vérité, donc le meilleur leurre : le Conseiller laisse croire à un « bug », un sous-système incontrôlé, pour qu'on n'imagine pas qu'il agit, lui, froidement et volontairement." },
+     { b:"prop", k:"term", lbl:"TERMINAL · pour appuyer la PISTE B", ti:"Ordre signé « Sécurité »",
+       l:["ORDRE DE SERVICE — AUTORITÉ : CMD SÉCURITÉ","","Réf : transfert disciplinaire, secteur 3","Sujet : agent D. REYES","Décision : réaffectation — CLASSÉE","Contreseing : Cmdt H. CROSS [auto]","> émis 04/10 03:02 — poste déjà fermé, Cross hors service"] },
+     { b:"note", x:"Le piège de la PISTE B : ce contreseing « [auto] » tombe à 03h02, alors que Cross dormait. C'est le Conseiller qui signe sous son autorité. La faille est là — ne la soulignez pas : laissez Abel l'ignorer et les PJ la débusquer." },
+   ]},
+   { t:"L'allié qui a tort · Abel Reyes", blocks:[
+     { b:"desc", x:"Abel Reyes, technicien-archiviste, frère de l'agent Dale Reyes disparu à Delta-7. Chaleureux, méthodique, crédible. Ses preuves sont RÉELLES ; sa conclusion (un coup d'État des officiers) est FAUSSE. Plus les PJ l'aiment, plus la chute fait mal. Sa fiche complète est dans le portail (recherche : Abel)." },
+     { b:"read", x:["Un homme d'une cinquantaine d'années vous fait entrer dans un cagibi tapissé de notes reliées par des fils. « Vous enquêtez sur Delta-7 ? Asseyez-vous. Mon frère y est entré. Il n'en est jamais ressorti. Et je vais vous montrer qui ment. »"] },
+     { b:"prop", k:"hand", lbl:"DOSSIER D'ABEL · ses « preuves »", ti:"Le tableau de corrélations d'Abel",
+       l:["DISPARITIONS  ⟷  ORDRES DE LA SÉCURITÉ","","Voss …… ordre Sécurité, même nuit","Dale …… ordre Sécurité, même nuit","Karim … ordre Sécurité, 3 jours avant","Nadia (ma belle-sœur) : surveillée.","TOUS signés CROSS.","→ ils nettoient. Ils prennent le pouvoir.","— Abel"] },
+     { b:"note", x:"À jouer : Abel a raison qu'il existe un schéma, et que la Sécurité en est l'instrument. Il a tort sur le commanditaire. Récompensez les PJ qui l'aident (accès, archives), mais ne les détrompez JAMAIS par un PNJ. La vérité doit venir d'une date qui ne colle pas." },
+     { b:"note", x:"Coût voulu : 2 à 3 séances sur cette piste. Bénéfice : quand la table comprend que « l'auteur » signe même quand personne n'est là pour signer, la bascule vers le Conseiller devient un vertige — pas une déduction tiède." },
+   ]},
+ ]},
+];
+
+/* convention images de scène : img_ep<N>_<k>.jpg, déposées dans le dossier */
+DATA.forEach(g=>{ const m=(g.ep.match(/ÉPISODE (\d+)/)||[])[1]; let k=0; g.scenes.forEach(sc=>{ sc.blocks.forEach(bl=>{ if(bl.b==='prop'&&bl.k==='image'){ k++; bl.img = m?('img_ep'+m+'_'+k+'.jpg'):null; } }); }); });
+
+/* ---------------- POSTERS & PLANS (SVG) ---------------- */
+function posterSVG(id){
+  if(id==="ensemble") return `<svg viewBox="0 0 800 1000" xmlns="http://www.w3.org/2000/svg">
+   <rect width="800" height="1000" fill="#14210f"/><rect x="30" y="30" width="740" height="940" fill="none" stroke="#ffb347" stroke-width="6"/>
+   <circle cx="400" cy="330" r="150" fill="none" stroke="#ffb347" stroke-width="10"/><path d="M320 360 q80 -120 160 0" fill="none" stroke="#ffb347" stroke-width="10"/>
+   <circle cx="360" cy="300" r="14" fill="#ffb347"/><circle cx="440" cy="300" r="14" fill="#ffb347"/>
+   <text x="400" y="620" fill="#ffb347" font-family="Georgia,serif" font-size="60" font-weight="bold" text-anchor="middle">ENSEMBLE,</text>
+   <text x="400" y="694" fill="#ffb347" font-family="Georgia,serif" font-size="52" font-weight="bold" text-anchor="middle">NOUS RECONSTRUIRONS</text>
+   <text x="400" y="766" fill="#ffb347" font-family="Georgia,serif" font-size="60" font-weight="bold" text-anchor="middle">L'AMÉRIQUE</text>
+   <text x="400" y="900" fill="#cfae6a" font-family="Georgia,serif" font-size="28" text-anchor="middle">— Conseil de la Station Sentinel-7 —</text></svg>`;
+  if(id==="omega") return `<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+   <rect width="800" height="600" fill="#171a16"/>
+   <g transform="rotate(-4 400 310)">
+     <text x="400" y="430" fill="#86c93f" font-family="Georgia,serif" font-size="360" font-weight="bold" text-anchor="middle" opacity="0.9">&#937;</text>
+     <rect x="300" y="430" width="10" height="95" fill="#86c93f" opacity="0.55"/>
+     <rect x="498" y="430" width="8" height="125" fill="#86c93f" opacity="0.45"/>
+     <text x="400" y="515" fill="#86c93f" font-family="monospace" font-size="44" text-anchor="middle" opacity="0.75">IL VOIT</text>
+   </g></svg>`;
+  return `<svg viewBox="0 0 800 600"><rect width="800" height="600" fill="#101810"/></svg>`;
+}
+function mapSVG(){ return `<svg viewBox="0 0 900 600" xmlns="http://www.w3.org/2000/svg">
+   <rect width="900" height="600" fill="#04140a"/><rect x="20" y="20" width="860" height="560" fill="none" stroke="#46ff7a" stroke-width="2"/>
+   <text x="40" y="55" fill="#ffb347" font-family="monospace" font-size="26">PLAN — DELTA-7 (vue de dessus)</text>
+   <rect x="60" y="90" width="180" height="120" fill="none" stroke="#46ff7a"/><text x="72" y="156" fill="#46ff7a" font-family="monospace" font-size="20">SAS</text>
+   <rect x="280" y="90" width="320" height="220" fill="none" stroke="#46ff7a"/><text x="300" y="206" fill="#46ff7a" font-family="monospace" font-size="20">RANGÉES A–F (serres)</text>
+   <rect x="280" y="340" width="320" height="180" fill="none" stroke="#ff6a6a"/><text x="300" y="436" fill="#ff6a6a" font-family="monospace" font-size="20">RANGÉES G–J (zone chaude)</text>
+   <rect x="640" y="90" width="200" height="120" fill="none" stroke="#46ff7a"/><text x="655" y="156" fill="#46ff7a" font-family="monospace" font-size="18">BUREAU VOSS</text>
+   <rect x="640" y="250" width="200" height="120" fill="none" stroke="#46ff7a"/><text x="655" y="316" fill="#46ff7a" font-family="monospace" font-size="18">SÉCURITÉ</text>
+   <circle cx="440" cy="500" r="6" fill="#ffb347"/><text x="455" y="506" fill="#ffb347" font-family="monospace" font-size="18">échelle → sous-sol</text></svg>`; }
+function slotSVG(t){ return `<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg"><rect width="900" height="560" fill="#0a0f0a"/>
+   <rect x="30" y="30" width="840" height="500" fill="none" stroke="#cf7bd8" stroke-dasharray="12 8" stroke-width="3"/>
+   <text x="450" y="270" fill="#cf7bd8" font-family="monospace" font-size="30" text-anchor="middle">[ ILLUSTRATION À VENIR ]</text>
+   <text x="450" y="320" fill="#7a5a82" font-family="monospace" font-size="20" text-anchor="middle">${t}</text></svg>`; }
+
+/* ---------------- moteur ---------------- */
+let sound=false, actx=null;
+function blip(){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(),g=actx.createGain(); o.type="square"; o.frequency.value=600+Math.random()*140; g.gain.value=.03;
+  o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+.012);}catch(e){} }
+const timers=new WeakMap();
+function idleHTML(){ return `<div class="idle station-idle"><svg viewBox="0 0 1000 560" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"><defs><radialGradient id="earthG" cx="50%" cy="100%" r="80%"><stop offset="0%" stop-color="#1f6e54"/><stop offset="45%" stop-color="#123b33"/><stop offset="100%" stop-color="#04140a"/></radialGradient></defs><g fill="#9fb3a5"><circle class="twk" cx="371" cy="107" r="1.5" style="animation-delay:0.1s"/><circle class="twk" cx="880" cy="78" r="1.4" style="animation-delay:0.1s"/><circle class="twk" cx="559" cy="139" r="1.0" style="animation-delay:1.0s"/><circle class="twk" cx="111" cy="153" r="1.1" style="animation-delay:1.0s"/><circle class="twk" cx="886" cy="93" r="2.1" style="animation-delay:1.5s"/><circle class="twk" cx="636" cy="61" r="1.7" style="animation-delay:1.0s"/><circle class="twk" cx="266" cy="53" r="1.7" style="animation-delay:0.3s"/><circle class="twk" cx="469" cy="103" r="1.6" style="animation-delay:1.4s"/><circle class="twk" cx="613" cy="122" r="1.1" style="animation-delay:1.4s"/><circle class="twk" cx="232" cy="220" r="1.1" style="animation-delay:1.7s"/><circle class="twk" cx="617" cy="60" r="1.7" style="animation-delay:1.2s"/><circle class="twk" cx="584" cy="248" r="1.9" style="animation-delay:1.1s"/><circle class="twk" cx="504" cy="215" r="1.4" style="animation-delay:1.9s"/><circle class="twk" cx="755" cy="154" r="1.1" style="animation-delay:0.7s"/><circle class="twk" cx="546" cy="205" r="1.9" style="animation-delay:0.7s"/><circle class="twk" cx="114" cy="90" r="1.6" style="animation-delay:0.4s"/></g><ellipse cx="500" cy="700" rx="690" ry="300" fill="url(#earthG)"/><ellipse cx="500" cy="700" rx="690" ry="300" fill="none" stroke="#46ff7a" stroke-opacity=".22" stroke-width="2"/><g class="floaty"><g transform="translate(500,232)"><ellipse cx="0" cy="0" rx="155" ry="42" fill="none" stroke="#2f6b46" stroke-width="1.5" stroke-opacity=".45"/><g stroke="#46ff7a" stroke-opacity=".5" fill="#0d1f16"><rect x="-152" y="-15" width="104" height="30"/><line x1="-126" y1="-15" x2="-126" y2="15"/><line x1="-100" y1="-15" x2="-100" y2="15"/><line x1="-74" y1="-15" x2="-74" y2="15"/><rect x="48" y="-15" width="104" height="30"/><line x1="74" y1="-15" x2="74" y2="15"/><line x1="100" y1="-15" x2="100" y2="15"/><line x1="126" y1="-15" x2="126" y2="15"/></g><line x1="-48" y1="0" x2="-18" y2="0" stroke="#46ff7a" stroke-opacity=".6"/><line x1="18" y1="0" x2="48" y2="0" stroke="#46ff7a" stroke-opacity=".6"/><rect x="-18" y="-72" width="36" height="144" rx="9" fill="#16241c" stroke="#46ff7a" stroke-opacity=".75"/><rect x="-9" y="-60" width="18" height="12" fill="#46ff7a" fill-opacity=".25"/><rect x="-9" y="-40" width="18" height="12" fill="#46ff7a" fill-opacity=".18"/><circle cx="0" cy="-82" r="16" fill="#16241c" stroke="#46ff7a" stroke-opacity=".75"/><rect x="-44" y="44" width="88" height="24" rx="6" fill="#16241c" stroke="#46ff7a" stroke-opacity=".6"/><line x1="0" y1="-82" x2="0" y2="-112" stroke="#46ff7a" stroke-opacity=".6"/><circle cx="0" cy="-114" r="3" fill="#ffb347"/><circle class="beacon" cx="0" cy="74" r="4" fill="#ff5a5a"/><circle r="3.2" fill="#ffb347"><animateMotion dur="15s" repeatCount="indefinite" path="M155,0 A155,42 0 1,1 -155,0 A155,42 0 1,1 155,0"/></circle></g></g><text x="500" y="452" text-anchor="middle" fill="#46ff7a" font-family="VT323,monospace" font-size="58" letter-spacing="6">SENTINEL-7</text><text x="500" y="492" text-anchor="middle" fill="#2f6b46" font-family="VT323,monospace" font-size="23" letter-spacing="3">STATION ORBITALE — SYSTEME EN VEILLE</text></svg></div>`; }
+function typeInto(box, lines){
+  if(timers.get(box)) timers.get(box).forEach(t=>clearTimeout(t)); const ts=[]; timers.set(box,ts);
+  box.innerHTML=""; let li=0,ci=0,cur=null,skip=false;
+  const cursor=document.createElement('span'); cursor.className='cursor'; box.onclick=()=>{ skip=true; };
+  function nl(){ if(li>=lines.length){ if(cursor.parentNode) cursor.remove(); return; } cur=document.createElement('div'); cur.className='ln'; box.appendChild(cur); ci=0; st(); }
+  function st(){ const t=lines[li];
+    if(skip){ cur.textContent=t; li++; box.scrollTop=box.scrollHeight; return ts.push(setTimeout(nl,0)); }
+    if(ci<=t.length){ cur.textContent=t.slice(0,ci); cur.appendChild(cursor); if(ci%2===0) blip(); ci++; box.scrollTop=box.scrollHeight; ts.push(setTimeout(st,16+Math.random()*22)); }
+    else { li++; ts.push(setTimeout(nl,80)); } }
+  nl();
+}
+function renderInto(box, msg){
+  if(msg.type==='clear'){ box.innerHTML=idleHTML(); return; }
+  if(msg.type==='img'){ box.innerHTML=''; const i=document.createElement('img'); i.className='scanin'; i.src=msg.src; box.appendChild(i); return; }
+  if(msg.type==='imgslot'){ box.innerHTML=''; const ph=()=>{ const d=document.createElement('img'); d.src='data:image/svg+xml;utf8,'+encodeURIComponent(slotSVG(msg.ti||'illustration')); box.innerHTML=''; box.appendChild(d); }; if(!msg.src){ ph(); return; } const i=document.createElement('img'); i.className='scanin'; i.src=msg.src; i.onerror=ph; box.appendChild(i); return; }
+  if(msg.type==='hand'){ box.innerHTML='<div class="paper scanin">'+msg.l.map(esc).join('<br>')+'</div>'; return; }
+  if(msg.type==='video'){ box.innerHTML=''; const v=document.createElement('video'); v.src=msg.src; v.controls=true; v.autoplay=true; v.playsInline=true; v.muted=!isPlayer; v.className='scanin'; v.onerror=()=>{ box.innerHTML='<div class="idle"><div class="sub" style="color:#ff6a6a">Vidéo introuvable : '+msg.src+'<br>(à placer dans le même dossier)</div></div>'; }; box.appendChild(v); v.play().catch(()=>{}); return; }
+  if(msg.type==='boutique'){ const s=msg.shop; box.innerHTML=''; if(!s) return;
+    const rows=s.items.map(it=>'<div class="sit"><span class="in">'+esc(it.n)+(it.note?' <em>('+esc(it.note)+')</em>':'')+'</span><span class="ip">'+esc(it.p)+'</span></div>').join('');
+    const d=document.createElement('div'); d.className='scard scanin';
+    d.innerHTML='<div class="sband">'+esc(s.v)+'</div><div class="slieu">'+esc(s.lieu)+'</div><div class="sitems">'+rows+'</div><div class="snote">'+esc(s.note)+'</div><div class="scur">prix en capsules de Star-Cola</div>';
+    box.appendChild(d); return; }
+  if(msg.type==='recette'){ const r=msg.r; box.innerHTML='';
+    if(!r){ box.innerHTML='<div class="idle"><div class="sub">recette introuvable</div></div>'; return; }
+    const ac={Armes:'#ff6a4a',Cuisine:'#46ff7a',Chems:'#cf7bd8',Survie:'#5db4ff'}[r.cat]||'#46ff7a';
+    const d=document.createElement('div'); d.className='rcard scanin'; d.style.setProperty('--ac',ac);
+    d.innerHTML='<div class="rband">RECETTE TROUVEE</div><div class="rnm">'+esc(r.name)+'</div>'
+      +'<div class="rsec"><span>COMPOSANTS</span>'+esc(r.comp)+'</div>'
+      +'<div class="rsec"><span>FABRICATION</span>'+esc(r.test)+'</div>'
+      +'<div class="rsec eff"><span>EFFET</span>'+esc(r.result)+'</div>'
+      +'<div class="rfl">'+esc(r.flavor)+'</div>';
+    box.appendChild(d); return; }
+  if(msg.type==='text'){ typeInto(box, msg.l); return; }
+}
+
+if(isPlayer){
+  document.getElementById('mj').style.display='none';
+  document.getElementById('player').style.display='flex';
+  const ps=document.getElementById('pscreen'); ps.innerHTML=idleHTML();
+  CH.onmessage=(e)=>{ const m=e.data; if(m.type==='sound'){ sound=m.on; return; } renderInto(ps,m); };
+  addEventListener('keydown',ev=>{ if(ev.key==='f'||ev.key==='F'){ (document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen()); } });
+}
+
+if(!isPlayer){
+  const scenes=document.getElementById('scenes'), stage=document.getElementById('stage'),
+        preview=document.getElementById('preview'), now=document.getElementById('now');
+  preview.innerHTML=idleHTML();
+  function send(msg,label){ CH.postMessage(msg); renderInto(preview,msg); now.textContent=label?('▶ '+label):'écran effacé'; }
+  function buildMsg(p){
+    if(p.k==='term'||p.k==='pipboy') return {type:'text', l:p.l};
+    if(p.k==='hand') return {type:'hand', l:p.l};
+    if(p.k==='poster') return {type:'img', src:'data:image/svg+xml;utf8,'+encodeURIComponent(posterSVG(p.poster))};
+    if(p.k==='map') return {type:'img', src:'data:image/svg+xml;utf8,'+encodeURIComponent(mapSVG())};
+    if(p.k==='image') return {type:'imgslot', src:p.img, ti:p.ti};
+    if(p.k==='imgfile') return {type:'img', src:p.src};
+    if(p.k==='video') return {type:'video', src:p.src};
+    if(p.k==='recette'){ return {type:'recette', r:(window.RECIPES||[]).find(x=>x.id===p.rid)}; }
+    if(p.k==='boutique'){ return {type:'boutique', shop:(window.SHOPS||[]).find(x=>x.id===p.sid)}; }
+    return null;
+  }
+  function showScene(sc){
+    stage.innerHTML='<h2>'+sc.t+'</h2>';
+    sc.blocks.forEach(bl=>{
+      if(bl.b==='desc'){ const d=document.createElement('div'); d.className='desc'; d.textContent=bl.x; stage.appendChild(d); return; }
+      if(bl.b==='read'){ const d=document.createElement('div'); d.className='read'; d.innerHTML='<span class="tag">À LIRE AUX JOUEURS</span>'+bl.x.map(esc).join('<br><br>'); stage.appendChild(d); return; }
+      if(bl.b==='note'){ const d=document.createElement('div'); d.className='note'; d.innerHTML='<b>NOTE MJ —</b> '+esc(bl.x); stage.appendChild(d); return; }
+      const d=document.createElement('div'); d.className='prop '+bl.k;
+      d.innerHTML='<div class="lbl">'+(bl.lbl||'')+'</div><div class="ti">'+bl.ti+'</div>';
+      if(bl.k==='video'){ const pv=document.createElement('video'); pv.src=bl.src; pv.controls=true; pv.preload='metadata'; pv.muted=true; pv.style.cssText='width:100%;margin:6px 0;border:1px solid var(--dim);border-radius:4px;background:#000'; pv.onerror=()=>{ const w=document.createElement('div'); w.style.cssText='color:#ff6a6a;font-size:13px;margin:4px 0'; w.textContent='⚠ Vid'+'éo introuvable : place '+bl.src+' dans le m'+'ême dossier que cette page.'; pv.replaceWith(w); }; d.appendChild(pv); }
+      if(bl.k==='video'){ const pv=document.createElement('video'); pv.src=bl.src; pv.controls=true; pv.preload='metadata'; pv.muted=true; pv.style.cssText='width:100%;margin:6px 0;border:1px solid var(--dim);border-radius:4px;background:#000'; pv.onerror=()=>{ const w=document.createElement('div'); w.style.cssText='color:#ff6a6a;font-size:13px;margin:4px 0'; w.textContent='⚠ Vidéo introuvable : place '+bl.src+' dans le même dossier que cette page.'; pv.replaceWith(w); }; d.appendChild(pv); }
+      const b=document.createElement('button'); b.className='btn'; b.textContent='▸ ENVOYER À L\'ÉCRAN';
+      b.onclick=()=>{ document.querySelectorAll('.prop').forEach(x=>x.classList.remove('sent')); d.classList.add('sent'); send(buildMsg(bl), bl.ti); };
+      d.appendChild(b); stage.appendChild(d);
+    });
+  }
+  DATA.forEach((g,gi)=>{ const eh=document.createElement('div'); eh.className='ep'; eh.textContent=g.ep; scenes.appendChild(eh);
+    g.scenes.forEach((sc,si)=>{ const d=document.createElement('div'); d.className='sc'; d.textContent=sc.t;
+      d.onclick=()=>{ document.querySelectorAll('.sc').forEach(x=>x.classList.remove('sel')); d.classList.add('sel'); showScene(sc); };
+      scenes.appendChild(d); if(gi===0&&si===0) setTimeout(()=>d.click(),60); }); });
+  document.getElementById('bOpen').onclick=()=>window.open(location.pathname+'#player','ecranJoueur','width=1280,height=800');
+  document.getElementById('bClear').onclick=()=>send({type:'clear'},null);
+  document.getElementById('bHelp').onclick=()=>{ document.getElementById('help').style.display='flex'; };
+  if(window.RECIPES){ const LL={Armes:'Armes',Cuisine:'Cuisine',Chems:'Chems',Survie:'Survie'}; let lf='Tous';
+    const lc=document.getElementById('lootchips'), ll=document.getElementById('lootlist');
+    function lootList(){ ll.innerHTML=''; window.RECIPES.filter(r=>lf==='Tous'||r.cat===lf).forEach(r=>{
+      const d=document.createElement('div'); d.className='ri'; d.innerHTML='<div class="nm">'+r.name+'<small>'+r.cat+' · '+r.test+'</small></div>';
+      const b=document.createElement('button'); b.className='give'; b.textContent='▸ Donner la carte';
+      b.onclick=()=>send({type:'recette', r:r}, 'recette : '+r.name); d.appendChild(b); ll.appendChild(d); }); }
+    function lchip(id,label){ const s=document.createElement('span'); s.className='chip'+(id==='Tous'?' on':''); s.textContent=label;
+      s.onclick=()=>{ lf=id; lc.querySelectorAll('.chip').forEach(x=>x.classList.remove('on')); s.classList.add('on'); lootList(); }; lc.appendChild(s); }
+    lchip('Tous','Tous'); Object.keys(LL).forEach(k=>lchip(k,LL[k]));
+    document.getElementById('bLoot').onclick=()=>{ document.getElementById('loot').style.display='flex'; lootList(); };
+    document.getElementById('lootX').onclick=()=>document.getElementById('loot').style.display='none';
+    document.getElementById('loot').addEventListener('click',e=>{ if(e.target.id==='loot') e.currentTarget.style.display='none'; });
+  if(window.SHOPS){ const sl=document.getElementById('shopvlist');
+    window.SHOPS.forEach(s=>{ const d=document.createElement('div'); d.className='vi'; d.innerHTML='<div class="nm">'+s.v+'<small>'+s.lieu+'</small></div>';
+      const b=document.createElement('button'); b.className='open'; b.textContent='▸ Montrer la devanture'; b.onclick=()=>send({type:'boutique', shop:s}, 'boutique : '+s.v); d.appendChild(b); sl.appendChild(d); });
+    document.getElementById('bShop').onclick=()=>document.getElementById('shop').style.display='flex';
+    document.getElementById('shopX').onclick=()=>document.getElementById('shop').style.display='none';
+    document.getElementById('shop').addEventListener('click',e=>{ if(e.target.id==='shop') e.currentTarget.style.display='none'; });
+  }
+  }
+  document.getElementById('helpX').onclick=()=>{ document.getElementById('help').style.display='none'; };
+  document.getElementById('help').onclick=(e)=>{ if(e.target.id==='help') e.currentTarget.style.display='none'; };
+  addEventListener('keydown',e=>{ if(e.key==='Escape') document.getElementById('help').style.display='none'; });
+  document.getElementById('bSon').onclick=function(){ sound=!sound; this.textContent='SON: '+(sound?'ON':'OFF'); this.classList.toggle('on',sound); CH.postMessage({type:'sound',on:sound}); if(sound) blip(); };
+  const drop=document.getElementById('drop');
+  ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('hot');}));
+  ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('hot');}));
+  function pushFile(f){ if(!f||!f.type.startsWith('image')) return; const r=new FileReader(); r.onload=()=>send({type:'img',src:r.result},'image : '+f.name); r.readAsDataURL(f); }
+  drop.addEventListener('drop',e=>pushFile(e.dataTransfer.files[0]));
+  drop.addEventListener('click',()=>{ const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.onchange=()=>pushFile(inp.files[0]); inp.click(); });
+}
+
+if(!isPlayer && window.NPCDB){
+  const DB=window.NPCDB, FN=DB.factions;
+  function slug(s){ return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,''); }
+  function imgPnj(p,cls){ const f='img_pnj_'+slug(p.n); return '<img class="'+cls+'" src="'+f+'.jpg" onerror="this.onerror=function(){this.style.display=&#39;none&#39;};this.src=&#39;'+f+'.png&#39;">'; }
+  const epNum=parseInt((location.hash.match(/#ep(\d+)/)||[])[1]||'1',10);
+  const hdr=document.querySelector('#mj header'); const epl=document.createElement('span');
+  epl.style.cssText='color:#ffb347;font-size:16px;margin-left:8px'; epl.textContent='· ÉP. '+epNum+(DB.episodes[epNum-1]?(' — '+DB.episodes[epNum-1]):'');
+  hdr.insertBefore(epl, hdr.querySelector('.sp'));
+  const st=document.createElement('style'); st.textContent=`
+   #npcpanel{position:fixed;top:0;right:-372px;width:352px;height:100%;background:#0f1813;border-left:1px solid #21342a;z-index:50;transition:right .2s;display:flex;flex-direction:column;font-family:system-ui,sans-serif;color:#dbe4dc}
+   #npcpanel.open{right:0} #npcpanel .ph{padding:12px 14px;border-bottom:1px solid #21342a;display:flex;align-items:center;gap:8px}
+   #npcpanel .ph b{color:#ffb347;font-family:VT323,monospace;font-size:18px;flex:1} #npcclose{cursor:pointer;color:#8a988e;font-size:20px}
+   #npcq2{margin:10px 12px;width:calc(100% - 24px);background:#121c17;border:1px solid #21342a;color:#dbe4dc;padding:8px 10px;border-radius:6px}
+   #npcpanel .togg{display:flex;gap:6px;padding:0 12px 8px} #npcpanel .togg span{cursor:pointer;border:1px solid #21342a;color:#8a988e;padding:3px 10px;border-radius:14px;font-size:12px}
+   #npcpanel .togg span.on{background:#46ff7a;color:#04140a;border-color:#46ff7a}
+   #npclist{flex:1;overflow:auto;padding:0 8px 20px} #npclist .it{padding:8px 10px;border-bottom:1px solid #182219;cursor:pointer}
+   #npclist .it:hover{background:#15211b} #npclist .it .n{font-weight:600} #npclist .it .r{color:#8a988e;font-size:12px}
+   #npcmodal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:55;align-items:flex-start;justify-content:center;padding:40px 16px;overflow:auto}
+   #npcmodal .c{width:min(680px,100%);background:#0f1813;border:1px solid #21342a;border-radius:12px;font-family:system-ui,sans-serif;color:#dbe4dc}
+   #npcmodal .hd{padding:16px 20px;border-bottom:1px solid #21342a;display:flex;justify-content:space-between;gap:10px}
+   #npcmodal .nm{font-size:22px;font-weight:600}#npcmodal .ro{color:#ffb347;font-size:14px;margin-top:2px}#npcmodal .x{cursor:pointer;color:#8a988e;font-size:22px}
+   #npcmodal .bd{padding:16px 20px 22px}#npcmodal .quote{font-style:italic;color:#c9d3ca;border-left:3px solid #ffb347;padding-left:12px;margin:0 0 14px}
+   #npcmodal .sheet{background:#0c1611;border:1px solid #21342a;border-radius:8px;overflow:hidden;margin-bottom:14px}
+   #npcmodal .sr{display:grid;grid-template-columns:140px 1fr;border-top:1px solid #21342a}#npcmodal .sheet .sr:first-child{border-top:none}
+   #npcmodal .k{background:#10201a;color:#46ff7a;padding:7px 11px;font-size:12px;font-weight:600}#npcmodal .v{padding:7px 11px;font-size:14px}
+   #npcmodal .blk{margin:0 0 12px}#npcmodal .blk .h{font-weight:600;color:#46ff7a;margin-bottom:3px}
+   #npcmodal .secret{background:#1c1212;border:1px solid #5b2b2b;border-radius:8px;padding:9px 12px}#npcmodal .secret .h{color:#e88}#npcmodal ul{margin:5px 0 0;padding-left:18px}
+   #npcmodal .nbann{width:100%;max-height:220px;object-fit:cover;display:block;border-radius:12px 12px 0 0}
+   #npclist .it .nthumb{width:100%;height:64px;object-fit:cover;border-radius:5px;margin-bottom:6px;display:block;background:#0c1611}`;
+  document.head.appendChild(st);
+  const panel=document.createElement('div'); panel.id='npcpanel';
+  panel.innerHTML='<div class="ph"><b>PNJ DU SCÉNARIO</b><span id="npcclose">✕</span></div><input id="npcq2" placeholder="rechercher un PNJ…"><div class="togg"><span id="tgEp" class="on">Cet épisode</span><span id="tgAll">Tous</span></div><div id="npclist"></div>';
+  document.body.appendChild(panel);
+  const modal=document.createElement('div'); modal.id='npcmodal'; modal.innerHTML='<div class="c"></div>'; document.body.appendChild(modal);
+  modal.onclick=e=>{ if(e.target.id==='npcmodal') modal.style.display='none'; };
+  let scope='ep', nq='';
+  function rn(k,v){ return v?('<div class="sr"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'):''; }
+  function openN(p){ let h=imgPnj(p,'nbann')+'<div class="hd"><div><div class="nm">'+p.n+'</div><div class="ro">'+p.r+' · '+FN[p.f]+'</div></div><div class="x">✕</div></div><div class="bd">';
+    if(p.q) h+='<div class="quote">« '+p.q+' »</div>';
+    const sh=rn("S.P.E.C.I.A.L.",p.special)+rn("PV / Déf / Init",p.pv)+rn("Compétences",p.comp)+rn("Traits",p.traits)+rn("Équipement",p.equip)+rn("Statut",p.stat);
+    if(sh) h+='<div class="sheet">'+sh+'</div>';
+    if(p.facade) h+='<div class="blk"><div class="h">Façade</div>'+p.facade+'</div>';
+    if(p.secret) h+='<div class="secret blk"><div class="h">Secret MJ</div>'+p.secret+'</div>';
+    if(p.cons) h+='<div class="blk"><div class="h">Conseils</div><ul>'+p.cons.map(x=>'<li>'+x+'</li>').join('')+'</ul></div>';
+    if(p.lev) h+='<div class="blk"><div class="h">Levier</div>'+p.lev+'</div>';
+    h+='</div>'; modal.querySelector('.c').innerHTML=h; modal.querySelector('.x').onclick=()=>modal.style.display='none'; modal.style.display='flex'; }
+  function listN(){ const L=document.getElementById('npclist'); L.innerHTML=''; const t=nq.toLowerCase();
+    DB.list.filter(p=>{ if(scope==='ep'&&!(p.ep&&p.ep.includes(epNum))) return false; if(t&&!(p.n+' '+p.r+' '+FN[p.f]).toLowerCase().includes(t)) return false; return true; })
+    .forEach(p=>{ const d=document.createElement('div'); d.className='it'; d.innerHTML=imgPnj(p,'nthumb')+'<div class="n">'+p.n+'</div><div class="r">'+p.r+'</div>'; d.onclick=()=>openN(p); L.appendChild(d); }); }
+  document.getElementById('bNpc').onclick=()=>panel.classList.toggle('open');
+  document.getElementById('npcclose').onclick=()=>panel.classList.remove('open');
+  document.getElementById('npcq2').addEventListener('input',function(){ nq=this.value.trim(); listN(); });
+  document.getElementById('tgEp').onclick=function(){ scope='ep'; this.classList.add('on'); document.getElementById('tgAll').classList.remove('on'); listN(); };
+  document.getElementById('tgAll').onclick=function(){ scope='all'; this.classList.add('on'); document.getElementById('tgEp').classList.remove('on'); listN(); };
+  listN();
+}
+
+(function(){ const l1=document.createElement('link'); l1.rel='stylesheet'; l1.href='https://fonts.googleapis.com/css2?family=VT323&family=Caveat:wght@500;600&display=swap'; document.head.appendChild(l1); })();
+</script>
+</body>
+</html>

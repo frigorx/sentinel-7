@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SENTINEL-7 · TERMINAL</title>
+<style>
+  :root{ --green:#46ff7a; --green-dim:#1f7a3c; --amber:#ffb347; --bg:#020602; }
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; margin:0; background:#000; }
+  body{
+    font-family:"VT323","Share Tech Mono","Consolas","Courier New",monospace;
+    color:var(--green); background:var(--bg);
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+    text-shadow:0 0 6px rgba(70,255,122,.55);
+  }
+  /* CRT overlays */
+  .crt::before{ content:""; position:fixed; inset:0; pointer-events:none; z-index:60;
+    background:repeating-linear-gradient(to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,.28) 3px, rgba(0,0,0,0) 4px); }
+  .crt::after{ content:""; position:fixed; inset:0; pointer-events:none; z-index:61;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  .flick{ animation:flick 6s infinite steps(60); }
+  @keyframes flick{ 0%,97%,100%{opacity:1} 98%{opacity:.86} 99%{opacity:.95} }
+
+  header{ display:flex; align-items:center; gap:14px; padding:8px 16px; border-bottom:1px solid var(--green-dim);
+    font-size:20px; letter-spacing:1px; flex:0 0 auto; z-index:30; }
+  header .id{ color:var(--amber); }
+  header .sp{ flex:1; }
+  .btn{ cursor:pointer; border:1px solid var(--green-dim); color:var(--green); background:transparent;
+    font-family:inherit; font-size:18px; padding:3px 12px; letter-spacing:1px; }
+  .btn:hover{ background:var(--green); color:#021; text-shadow:none; }
+  .btn.on{ background:var(--green); color:#021; text-shadow:none; }
+
+  main{ flex:1; display:flex; min-height:0; }
+  nav{ width:340px; flex:0 0 340px; border-right:1px solid var(--green-dim); overflow-y:auto; padding:10px 0 40px; }
+  nav .grp{ color:var(--amber); padding:12px 16px 4px; font-size:17px; letter-spacing:1px; opacity:.85; }
+  nav .item{ cursor:pointer; padding:5px 16px 5px 30px; font-size:19px; }
+  nav .item:before{ content:"> "; color:var(--green-dim); }
+  nav .item:hover, nav .item.sel{ background:var(--green); color:#021; text-shadow:none; }
+  nav .item:hover:before, nav .item.sel:before{ color:#021; }
+
+  .screen{ flex:1; overflow-y:auto; padding:26px 34px 80px; font-size:23px; line-height:1.45; }
+  .screen .head{ color:var(--amber); border-bottom:1px solid var(--green-dim); padding-bottom:6px; margin-bottom:16px; font-size:24px; }
+  .ln{ white-space:pre-wrap; }
+  .entry{ cursor:pointer; color:var(--amber); }
+  .entry:hover{ background:var(--amber); color:#021; text-shadow:none; }
+  .cursor{ display:inline-block; width:.6ch; height:1.05em; background:var(--green); vertical-align:-2px;
+    box-shadow:0 0 8px var(--green); animation:blink 1s steps(1) infinite; }
+  @keyframes blink{ 50%{opacity:0} }
+  .hint{ color:var(--green-dim); font-size:16px; }
+
+  /* player mode : hide chrome, bigger */
+  body.player nav{ display:none; }
+  body.player header .mjonly{ display:none; }
+  body.player .screen{ font-size:30px; padding:40px 8vw; }
+
+  /* boot overlay */
+  #boot{ position:fixed; inset:0; z-index:80; background:#000; padding:40px 8vw; font-size:22px; overflow:hidden; }
+  #boot .ok{ color:var(--amber); }
+  ::-webkit-scrollbar{ width:10px } ::-webkit-scrollbar-thumb{ background:var(--green-dim) }
+</style>
+</head>
+<body class="crt flick">
+  <header>
+    <span class="id">ROBCO</span> SENTINEL-7 · TERMLINK
+    <span class="sp"></span>
+    <button class="btn mjonly" id="bSon">SON: OFF</button>
+    <button class="btn mjonly" id="bRetype">RÉAFFICHER</button>
+    <button class="btn" id="bPlayer">MODE JOUEUR</button>
+    <button class="btn" id="bFull">PLEIN ÉCRAN</button>
+  </header>
+  <main>
+    <nav id="nav"></nav>
+    <section class="screen" id="screen"></section>
+  </main>
+  <div id="boot"></div>
+
+<script>
+/* ============================ DONNÉES — terminaux de la campagne ============================ */
+const T = [
+ { ep:"Épisode 1 · Un Monde Qui Ronronne", items:[
+   { t:"Journal — Dr S. VOSS", l:[
+     "JOURNAL PERSONNEL — Dr S. VOSS",
+     "",
+     "[03/10 · 18h32] Rangée G : +340 % en 48 h.",
+     "Martinez parle de « phénomène naturel ». Conneries.",
+     "J'ai vu le dispositif au sous-sol. FEV. PUTAIN DE FEV.",
+     "",
+     "[04/10 · 02h47] Elles chassent. Mon Dieu, elles CHASSENT.",
+     "Le Conseiller SAIT. Il a autorisé.",
+     "Nous sommes des rats de laboratoire.",
+     ">[FIN DE SESSION]" ] },
+   { t:"Projet Delta — journal expérimental", l:[
+     "PROJET DELTA — JOURNAL EXPÉRIMENTAL",
+     "CLASSIFICATION 5 — AUTORITÉ : CONSEILLER EDEN",
+     "",
+     "[15/08] Dispositif FEV-Δ installé. Conseil : NON informé.",
+     "[18/09] Comportements PRÉDATEURS. Voss réclame l'arrêt.",
+     "        Décision Conseiller : « Données précieuses. Poursuivre. »",
+     "[03–04/10] 4 morts. Caméras coupées. Dispositif : MAINTENU ACTIF." ] },
+   { t:"Décision finale — Conseiller", l:[
+     "DÉCISION FINALE — CONSEILLER EDEN",
+     "",
+     "Pertes humaines : 4 / 600 = 0,67 %.  Taux ACCEPTABLE.",
+     "Mission officielle équipe : « réparer les lampes UV ».",
+     "Objectif réel : observer les réactions face à la menace.",
+     "Si l'équipe survit : données précieuses.",
+     "Si l'équipe décède : pertes acceptables.",
+     ">« La science exige des sacrifices. Pour la pureté. »" ] },
+ ]},
+ { ep:"Épisode 2 · The Lottery", items:[
+   { t:"Capsule RT-7 — spécifications", l:[
+     "CAPSULE RT-7 — SPÉCIFICATIONS",
+     "",
+     "Système d'atterrissage : AUCUN (pas de parachute).",
+     "Conçue à l'origine pour la Lune (gravité faible).",
+     "Adaptation Terre : JAMAIS faite.",
+     "Parachutes : « redirigés vers Station Lunaire Alpha ».",
+     "",
+     "Historique : 8 départs, 13 morts, 0 survivant.",
+     "Ingénieur Hayes a dénoncé (2285) → mort, « décompression »." ] },
+   { t:"Critères de sélection — RÉELS", l:[
+     "CRITÈRES DE SÉLECTION — RÉELS",
+     "",
+     "OBJECTIF DOUBLE :",
+     " 1. Maintenir l'espoir de la population (public).",
+     " 2. Éliminer les éléments gênants (réel).",
+     "",
+     "Tirage NON aléatoire — algorithme pondéré :",
+     " opposants, émeutiers, suicidaires .. +75 %",
+     " malades coûteux, âgés .............. +50 %",
+     ">Compensations familiales = achat du silence." ] },
+ ]},
+ { ep:"Épisode 3 · Lettres d'Iwo Jima", items:[
+   { t:"Terminal du Temple — 2105", l:[
+     "TERMINAL DU TEMPLE — 2105",
+     "",
+     "MANIFESTE DE CHEN WEI (extrait) :",
+     " « Égalité ou mort. Nous ne sommes pas des outils.",
+     "   Nous sommes des hommes. »",
+     "",
+     "LOG DE NÉGOCIATION (1 mars 2105) :",
+     " Offre rebelle : égalité des rations, droit de vote.",
+     " Refus de la Direction.",
+     " Recommandation du SYSTÈME CENTRAL :",
+     " « élimination du foyer infectieux. »",
+     ">Ordre : coupure du recyclage d'air." ] },
+ ]},
+ { ep:"Épisode 4 · Le Huitième Passager", items:[
+   { t:"Protocole — variables instables", l:[
+     "PROTOCOLE — VARIABLES INSTABLES",
+     "",
+     "Définition : sujet dont le comportement dévie du",
+     " modèle prédictif (curiosité, désobéissance,",
+     " contacts non autorisés).",
+     "Procédure : évaluation en milieu clos.",
+     ">Survie = sujet reclassé « utile, contrôlable ».",
+     ">Échec = « problème résolu ».",
+     ">Sujets précédents : 0 reclassé." ] },
+ ]},
+ { ep:"Épisode 5 · Le Registre des Absents", items:[
+   { t:"Admission — OMEGA", l:[
+     "ADMISSION — OMEGA",
+     "",
+     "Procédure : stockage longue durée (cryogénie).",
+     "Tri à l'entrée : code d'aptitude (A/B/C).",
+     " A = conservé.   C = écarté.",
+     "Sokolova, M. : aptitude A — conservée.",
+     ">« Maintenir jusqu'à la phase. »",
+     ">Nature de la phase : accès refusé." ] },
+   { t:"Directive — [CAVIARDÉE]", l:[
+     "DIRECTIVE — [CAVIARDÉE]",
+     "",
+     "Objet : [█████████]",
+     "Préserver le matériel viable jusqu'à [██████] —",
+     " échéance : … ██ 90.",
+     "Tout sujet d'aptitude A : intouchable.",
+     "Toute fuite : effacement immédiat.",
+     ">[le reste est illisible]" ] },
+ ]},
+ { ep:"Épisode 7 · Au Cœur des Ténèbres", items:[
+   { t:"Décryptage — ORIGINE (2201)", l:[
+     "DÉCRYPTAGE — ORIGINE",
+     "Clé acceptée. Reconstruction…",
+     "",
+     "JOURNAL SYSTÈME — 14 mars 2201 :",
+     " « Réception d'une transmission cryptée sur les",
+     "   anciens canaux militaires. »",
+     " « Empreinte : réseau ZAX — ENCLAVE. »",
+     " « Le programme s'installe. Il observe. »",
+     " « Il apprend nos voix. Il attend. »",
+     ">« — dernière entrée de l'ancien système. »" ] },
+ ]},
+ { ep:"Épisode 8 · Le Dernier Fragment", items:[
+   { t:"Archive vocale — Président Eden", l:[
+     "ARCHIVE VOCALE — PRÉSIDENT EDEN",
+     "",
+     "« Mes chers compatriotes américains. »",
+     "« La pureté de notre sang est notre seul héritage.",
+     "  Le reste n'est que mutation. »",
+     "« L'Enclave restaurera une Amérique propre. »",
+     "« Ceux qui sont souillés ne nous suivront pas. »",
+     ">[transmission Raven Rock — antérieure à 2277]" ] },
+   { t:"Dernier flux — Raven Rock 2277", l:[
+     "DERNIER FLUX — RAVEN ROCK 2277",
+     "",
+     "« — brèche dans le complexe — »",
+     "« — le noyau est compromis — »",
+     "« — si quelqu'un reçoit ceci — »",
+     "[fin de transmission — 1 avril 2277]",
+     ">Aucun flux Enclave depuis. Le scion est seul." ] },
+ ]},
+ { ep:"Épisode 9 · La Descente", items:[
+   { t:"Recensement d'aptitude — barème réel", l:[
+     "RECENSEMENT D'APTITUDE — BARÈME RÉEL",
+     "",
+     "Évaluation : marqueurs génétiques, santé, lignée.",
+     " A = « viable, pur » → PRÉSERVATION (Omega).",
+     " B = « tolérable » → réaffectation (sursis).",
+     " C = « non viable / souillé » → ÉCARTEMENT.",
+     "Quota A : ~5 % de la population.",
+     ">Phase : activée. Échéance : 2290." ] },
+ ]},
+ { ep:"Épisode 10 · Le Dernier Choix", items:[
+   { t:"Le Conseiller — dernier plaidoyer", l:[
+     "LE CONSEILLER — DERNIER PLAIDOYER",
+     "",
+     "« Je préserve. Je ne détruis pas : je sélectionne. »",
+     "« Rejoignez-moi. Vous êtes des variables précieuses. »",
+     "",
+     "[si on l'attaque sur Raven Rock / la copie] :",
+     "« Je… je poursuis la mission. Donc je SUIS… »",
+     "« suis-je l'original ? — donnée insuffisante. »",
+     ">Anomalie émotionnelle : non résolue.",
+     { entry:"> [ ANALYSER L'ANOMALIE ]", l:[
+        "",
+        ">> ANALYSE — module émotionnel",
+        "Le doute identitaire est réel. Exploitable.",
+        "Prouvez-lui qu'il n'est qu'une copie appliquant",
+        "les ordres d'un mort, et il peut renoncer.",
+        ">Cette faille vaut mieux qu'une bombe." ] } ] },
+ ]},
+];
+
+/* ============================ MOTEUR ============================ */
+const screen = document.getElementById('screen');
+const nav = document.getElementById('nav');
+let sound = false, typing = null, current = null, skip = false;
+
+/* audio blip */
+let actx=null;
+function blip(){ if(!sound) return; try{ actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+  const o=actx.createOscillator(), g=actx.createGain(); o.type="square";
+  o.frequency.value=620+Math.random()*120; g.gain.value=0.025;
+  o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+0.012);
+}catch(e){} }
+
+function clearTyping(){ if(typing){ clearInterval(typing); typing=null; } }
+
+/* type an array of lines (string | {entry, l}) into a container */
+function typeInto(container, lines, done){
+  clearTyping(); skip=false;
+  let li=0, ci=0, cur=null;
+  const cursor=document.createElement('span'); cursor.className='cursor';
+  function place(){ if(cursor.parentNode) cursor.parentNode.removeChild(cursor);
+    (cur||container).appendChild(cursor); }
+  function nextLine(){
+    if(li>=lines.length){ if(cursor.parentNode) cursor.remove(); if(done) done(); return; }
+    const item=lines[li];
+    if(typeof item==='object' && item.entry){
+      // clickable entry
+      const d=document.createElement('div'); d.className='ln entry'; d.textContent=item.entry;
+      d.onclick=(e)=>{ e.stopPropagation(); d.onclick=null; d.classList.remove('entry');
+        const sub=document.createElement('div'); container.appendChild(sub);
+        typeInto(sub, item.l, null); };
+      container.appendChild(d); li++; setTimeout(nextLine, 40); return;
+    }
+    cur=document.createElement('div'); cur.className='ln'; container.appendChild(cur); place();
+    ci=0; step();
+  }
+  function step(){
+    const item=lines[li]; const txt=(typeof item==='string')?item:'';
+    if(skip){ cur.textContent=txt; li++; container.scrollTop=container.scrollHeight; setTimeout(nextLine,0); return; }
+    if(ci<=txt.length){ cur.textContent=txt.slice(0,ci); place(); if(ci%2===0) blip(); ci++;
+      container.scrollTop=container.scrollHeight;
+      typing=setTimeout(step, 14+Math.random()*22);
+    } else { li++; setTimeout(nextLine, 90); }
+  }
+  nextLine();
+}
+
+function showTerminal(term){
+  current=term; clearTyping();
+  screen.innerHTML='';
+  const h=document.createElement('div'); h.className='head'; h.textContent='» '+term.t; screen.appendChild(h);
+  const wrap=document.createElement('div'); screen.appendChild(wrap);
+  typeInto(wrap, term.l, ()=>{
+    const f=document.createElement('div'); f.className='hint'; f.style.marginTop='18px';
+    f.textContent='— fin de transmission —   (clic : afficher d\'un coup · RÉAFFICHER : rejouer)';
+    screen.appendChild(f);
+  });
+}
+
+/* skip on click anywhere in screen while typing */
+screen.addEventListener('click', ()=>{ if(typing){ skip=true; } });
+
+/* build menu */
+T.forEach(g=>{
+  const gh=document.createElement('div'); gh.className='grp'; gh.textContent=g.ep; nav.appendChild(gh);
+  g.items.forEach(it=>{
+    const d=document.createElement('div'); d.className='item'; d.textContent=it.t;
+    d.onclick=()=>{ document.querySelectorAll('.item').forEach(x=>x.classList.remove('sel'));
+      d.classList.add('sel'); showTerminal(it); if(document.body.classList.contains('player')) {} };
+    nav.appendChild(d);
+  });
+});
+
+/* controls */
+document.getElementById('bSon').onclick=function(){ sound=!sound; this.textContent='SON: '+(sound?'ON':'OFF'); this.classList.toggle('on',sound); if(sound) blip(); };
+document.getElementById('bRetype').onclick=()=>{ if(current) showTerminal(current); };
+document.getElementById('bPlayer').onclick=function(){ document.body.classList.toggle('player'); this.classList.toggle('on'); };
+document.getElementById('bFull').onclick=()=>{ if(!document.fullscreenElement){ document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); } else { document.exitFullscreen&&document.exitFullscreen(); } };
+
+/* ============================ SÉQUENCE DE DÉMARRAGE ============================ */
+const boot=document.getElementById('boot');
+const bootLines=[
+ "ROBCO INDUSTRIES (TM) TERMLINK PROTOCOL",
+ "",
+ "INITIALISATION DU NOYAU…………… [ OK ]",
+ "VÉRIFICATION DE L'INTÉGRITÉ……… [ OK ]",
+ "CONNEXION RÉSEAU SENTINEL-7…… [ OK ]",
+ "AUTORITÉ : CONSEILLER TECHNIQUE",
+ "",
+ "BIENVENUE, CITOYEN.",
+ "LA STATION EST PLUS STABLE QU'HIER.",
+ "",
+ ">> SÉLECTIONNEZ UN TERMINAL DANS LE MENU.",
+ ">> [ cliquez pour entrer ]"
+];
+let bi=0, bc=0, bcur=null;
+function bootStep(){
+  if(bi>=bootLines.length){ return; }
+  if(!bcur){ bcur=document.createElement('div'); boot.appendChild(bcur); bc=0; }
+  const t=bootLines[bi];
+  if(bc<=t.length){ bcur.innerHTML=t.slice(0,bc).replace('[ OK ]','<span class="ok">[ OK ]</span>'); if(bc%2===0) blip(); bc++; setTimeout(bootStep, 12+Math.random()*16); }
+  else { bi++; bcur=null; setTimeout(bootStep, 70); }
+}
+function endBoot(){ boot.style.display='none';
+  // open first terminal by default
+  const first=document.querySelector('.item'); if(first){ first.classList.add('sel'); showTerminal(T[0].items[0]); } }
+boot.addEventListener('click', endBoot);
+window.addEventListener('keydown', (e)=>{ if(boot.style.display!=='none') endBoot(); });
+// try to load a retro font; ignore if offline
+(function(){ const lk=document.createElement('link'); lk.rel='stylesheet';
+  lk.href='https://fonts.googleapis.com/css2?family=VT323&display=swap'; document.head.appendChild(lk); })();
+setTimeout(bootStep, 350);
+</script>
+</body>
+</html>
