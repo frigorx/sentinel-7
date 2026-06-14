@@ -28,16 +28,16 @@
 
 ## 2 · LE STORYBOARD (6 plans, ~28 s)
 
-Pour ta génération vidéo. Style commun à viser : *Fallout retro-futurist concept art, 1950s Americana sci-fi, painterly gouache, muted desaturated palette with amber and teal accents, dramatic volumetric lighting, weathered industrial space-station, grain, no text, no watermark —*
+Découpage en plans (storyboard). Style commun à viser : *Fallout retro-futurist concept art, 1950s Americana sci-fi, painterly gouache, muted desaturated palette with amber and teal accents, dramatic volumetric lighting, weathered industrial space-station, grain, no text, no watermark —*
 
-| # | Durée | Image (FR) | Prompt génération (EN) | Voix off |
-|---|---|---|---|---|
-| 1 | 0–4 s | Coursive déserte vers le Secteur 7. Les lumières s'éteignent une à une en s'éloignant. Au sol, une vieille inscription chinoise à demi effacée. | *a dim space-station corridor stretching toward a distant sector hatch, overhead lights going out one by one receding into darkness, a faded Chinese inscription on the floor, eerie calm, cold teal light* | « Citoyens. La station est propre. Elle respire. » |
-| 2 | 4–9 s | Gros plan sur un autel de bougies allumées devant une grande porte de métal scellée. Des centaines de noms gravés à la main, des offrandes de nourriture synthétique. Une jeune femme de dos qui murmure. | *a small devotional altar with burning candles before a massive sealed steel door, hundreds of hand-carved names covering the surface, a young woman seen from behind murmuring a prayer, mournful amber candlelight* | « Le Secteur 7-B… une mission simple. » |
-| 3 | 9–14 s | Un ordre de mission posé sur une table : le mot « CONFINEMENT » en gros caractères. Une main le retourne, hésitante. | *a mission-order document on a metal table, the word CONFINEMENT in large stencilled letters, a hesitant hand turning it face-down, cold fluorescent light, unease* | « Un périmètre à consolider. · Rien d'alarmant. » |
-| 4 | 14–20 s | Une enveloppe scellée à la cire rouge, un sceau dragon-phénix, tenue dans deux mains entre des bougies. Image chaude, presque intime. | *a letter sealed with red wax bearing a dragon-phoenix seal, held gently in two hands between candle flames, warm amber glow, intimate and fragile* | « Peut-être que quelqu'un attendait… cent quatre-vingt-trois ans. » |
-| 5 | 20–25 s | Un couloir d'avant-guerre, rouillé : une jungle verte et vive déborde d'une porte entrebâillée — UV violet, vapeur chaude, feuilles mutées. Flou, fugitif, comme un mirage. | *a flash glimpse through a barely cracked blast door of impossible green jungle inside a space station, violet UV grow-light, warm humid mist, mutated leaves, a half-second vision before the door closes, dream-like* | « La prochaine fois, nous ouvrons la porte. » |
-| 6 | 25–28 s | La porte massive du Secteur 7-B, close, rouillée, silencieuse. Aucun mouvement. Juste le silence. Mais le voyant ambre clignote une fois — et s'éteint. Coupe au noir. | *the massive rusted sealed door of Sector 7-B, silent, motionless, a single amber indicator light blinking once then going dark, the shot holding one second too long, then cut to black* | « Bonne chance, citoyens. » |
+| # | Durée | Image (FR) | Voix off |
+|---|---|---|---|
+| 1 | 0–4 s | Coursive déserte vers le Secteur 7. Les lumières s'éteignent une à une en s'éloignant. Au sol, une vieille inscription chinoise à demi effacée. | « Citoyens. La station est propre. Elle respire. » |
+| 2 | 4–9 s | Gros plan sur un autel de bougies allumées devant une grande porte de métal scellée. Des centaines de noms gravés à la main, des offrandes de nourriture synthétique. Une jeune femme de dos qui murmure. | « Le Secteur 7-B… une mission simple. » |
+| 3 | 9–14 s | Un ordre de mission posé sur une table : le mot « CONFINEMENT » en gros caractères. Une main le retourne, hésitante. | « Un périmètre à consolider. · Rien d'alarmant. » |
+| 4 | 14–20 s | Une enveloppe scellée à la cire rouge, un sceau dragon-phénix, tenue dans deux mains entre des bougies. Image chaude, presque intime. | « Peut-être que quelqu'un attendait… cent quatre-vingt-trois ans. » |
+| 5 | 20–25 s | Un couloir d'avant-guerre, rouillé : une jungle verte et vive déborde d'une porte entrebâillée — UV violet, vapeur chaude, feuilles mutées. Flou, fugitif, comme un mirage. | « La prochaine fois, nous ouvrons la porte. » |
+| 6 | 25–28 s | La porte massive du Secteur 7-B, close, rouillée, silencieuse. Aucun mouvement. Juste le silence. Mais le voyant ambre clignote une fois — et s'éteint. Coupe au noir. | « Bonne chance, citoyens. » |
 
 **Note de montage :** le plan 5 est volontairement furtif — une fraction de seconde de vert derrière le métal — sans explication. Les joueurs ne savent pas si c'est réel ou une erreur de montage. Le plan 6 referme tout dans le silence. Le doute s'installe sans rien nommer.
 

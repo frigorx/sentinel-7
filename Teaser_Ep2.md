@@ -34,16 +34,16 @@
 
 ## 2 · LE STORYBOARD (6 plans, ~28 s)
 
-Pour ta génération vidéo. Style commun à viser : *Fallout retro-futuriste, années 50 américaines, peinture à la gouache, palette désaturée ambre & turquoise, lumière volumétrique, station spatiale industrielle usée, grain, sans texte incrusté.*
+Découpage en plans (storyboard). Style commun à viser : *Fallout retro-futuriste, années 50 américaines, peinture à la gouache, palette désaturée ambre & turquoise, lumière volumétrique, station spatiale industrielle usée, grain, sans texte incrusté.*
 
-| # | Durée | Image (FR) | Prompt génération (EN) | Voix off |
-|---|---|---|---|---|
-| 1 | 0–3 s | Noir. Un haut-parleur de coursive grésille, un voyant ambre s'allume. | *dark corridor speaker grille on a worn space station, a single amber indicator light flickering on, dust motes, ominous calm* | (silence, puis grésillement) |
-| 2 | 3–8 s | File de rationnement : visages creusés, dignes. Une mère serre une maigre ration contre elle. | *a ration queue in a worn station corridor, gaunt dignified citizens, a mother clutching a meager food portion, cold fluorescent light, somber* | « Citoyens. Ces dernières semaines… vous avez tenu. » |
-| 3 | 8–13 s | Bascule : les écrans muraux s'allument d'un coup, lumière chaude et dorée, de grands drapeaux se déploient. | *wall propaganda screens flaring to warm golden light, huge faded American flags unfurling on a station plaza, hopeful glow rising* | « Mais la patience a une récompense… » |
-| 4 | 13–19 s | Une urne holographique géante où défilent des centaines de noms ; en contrebas, une foule qui lève les yeux, gonflée d'espoir. | *a giant holographic lottery urn scrolling hundreds of names above a crowd looking up with hope, warm stage light, festive yet uneasy* | « Trois citoyens seront choisis. Trois pionniers. » |
-| 5 | 19–24 s | Un enfant maigre sourit, fixe un ciel bleu projeté sur un mur. Gros plan d'un visage ému, une larme. | *a thin child smiling, staring at a projected blue sky on a station wall, close-up of a moved tearful adult face, bittersweet* | « Les premiers à rentrer… à la maison. » |
-| 6 | 24–28 s | Dernier plan, plus froid : une lourde porte de capsule se referme lentement dans un sas désert. Une demi-seconde de trop. Coupe au noir. | *a heavy escape-capsule hatch slowly sealing shut in a deserted hangar airlock, cold teal light, the shot lingering a half-second too long, then cut to black* | « Et que la chance… vous sourie. » |
+| # | Durée | Image (FR) | Voix off |
+|---|---|---|---|
+| 1 | 0–3 s | Noir. Un haut-parleur de coursive grésille, un voyant ambre s'allume. | (silence, puis grésillement) |
+| 2 | 3–8 s | File de rationnement : visages creusés, dignes. Une mère serre une maigre ration contre elle. | « Citoyens. Ces dernières semaines… vous avez tenu. » |
+| 3 | 8–13 s | Bascule : les écrans muraux s'allument d'un coup, lumière chaude et dorée, de grands drapeaux se déploient. | « Mais la patience a une récompense… » |
+| 4 | 13–19 s | Une urne holographique géante où défilent des centaines de noms ; en contrebas, une foule qui lève les yeux, gonflée d'espoir. | « Trois citoyens seront choisis. Trois pionniers. » |
+| 5 | 19–24 s | Un enfant maigre sourit, fixe un ciel bleu projeté sur un mur. Gros plan d'un visage ému, une larme. | « Les premiers à rentrer… à la maison. » |
+| 6 | 24–28 s | Dernier plan, plus froid : une lourde porte de capsule se referme lentement dans un sas désert. Une demi-seconde de trop. Coupe au noir. | « Et que la chance… vous sourie. » |
 
 **Note de montage :** le secret de l'effet, c'est le plan 6. Tout est lumineux et chaleureux jusque-là ; ce dernier plan, lui, est froid et silencieux, et il dure juste un peu trop. C'est ce décalage qui sème le doute — sans rien dire.
 

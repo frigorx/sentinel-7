@@ -28,6 +28,6 @@ La page d'accueil servie est `index.html`. Aucune compilation nécessaire (site 
 
 ## Crédits & licence
 
-Conception & rédaction : **Franck Henninot** — 2026. Un travail de passionné, offert gratuitement.
+Conception & rédaction : **Franck Henninot** — 2026. Co-écrit avec l'assistance de Claude (IA, Anthropic). Un travail de passionné, offert gratuitement.
 
 Œuvre de fan **non officielle et non commerciale**. *Fallout* et son univers sont la propriété de **Bethesda Softworks / ZeniMax**. Ce projet est partagé pour un usage personnel et ludique ; **aucun usage commercial**.

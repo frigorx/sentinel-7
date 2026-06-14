@@ -28,16 +28,16 @@
 
 ## 2 · LE STORYBOARD (6 plans, ~28 s)
 
-Pour ta génération vidéo. Style commun à viser : *Fallout retro-futurist concept art, 1950s Americana sci-fi, painterly gouache, muted desaturated palette with amber and teal accents, dramatic volumetric lighting, weathered industrial space-station, grain, no text, no watermark —*
+Découpage en plans (storyboard). Style commun à viser : *Fallout retro-futurist concept art, 1950s Americana sci-fi, painterly gouache, muted desaturated palette with amber and teal accents, dramatic volumetric lighting, weathered industrial space-station, grain, no text, no watermark —*
 
-| # | Durée | Image (FR) | Prompt génération (EN) | Voix off |
-|---|---|---|---|---|
-| 1 | 0–4 s | Un tableau d'affichage mural dans une coursive. Une fiche-nom a été décollée : il reste un rectangle plus pâle sur le métal terni, comme une cicatrice. Une main effleure l'emplacement vide. | *a metal wall noticeboard in a space station corridor, a pale rectangle where a name-card has been peeled away, a hand touching the empty space, melancholy absence, cold teal light, grain* | « Les gens bougent. · On se réaffecte. » |
-| 2 | 4–9 s | Un atelier exigu, vidé et réaffecté à la hâte. Un outil personnel oublié dans un coin. Une voisine entrouvre sa porte — et la referme prestement en croisant le regard. | *a cramped technician workshop on a space station, hastily cleared, a single personal tool left forgotten in a corner, a neighbour glimpsed through a half-open door who quickly shuts it, fear and silence* | « Les personnes qui sont parties sont bien. » |
-| 3 | 9–15 s | Terminal aux archives : la recherche s'effectue, puis : « AUCUN DOSSIER ACTIF ». La main qui tape hésite, tape encore. Même résultat. | *a station archive terminal, a search query being typed, the screen returning AUCUN DOSSIER ACTIF — NO ACTIVE FILE, the typist's hand hesitating and re-entering the query, the same cold result, green text on black* | « Il n'y a rien à chercher. · Rien à demander. » |
-| 4 | 15–20 s | Un eyebot dans une coursive — optique rouge lente — pivote vers la caméra, juste un instant, puis repart comme si de rien n'était. Quelqu'un est regardé. | *a hovering eyebot drone in a dim station corridor, its red optical lens slowly turning toward the camera for a moment then looking away casually, the sense of being observed and dismissed, paranoid unease* | « Rien à quoi se souvenir. » |
-| 5 | 20–25 s | Un hublot de hublot givré dans un couloir sombre. Derrière la vitre, dans la pénombre bleue, un visage que les joueurs pourraient avoir croisé — les yeux fermés, immobile. Trop immobile. Fondu lent. | *a frosted porthole window set in a dark station wall, behind the icy glass a faint human face visible, eyes closed, perfectly still, cold blue light, a slow fade before the detail becomes certain* | « Elles sont mieux. » |
-| 6 | 25–28 s | Le tableau d'affichage de nouveau — mais cette fois, deux fiches ont été décollées. Puis trois. Le fondu au noir arrive trop vite. | *the same noticeboard from shot 1, but now two then three name-cards have been removed, more pale rectangles, the image fading to black an instant too soon* | « · La station est stable. » |
+| # | Durée | Image (FR) | Voix off |
+|---|---|---|---|
+| 1 | 0–4 s | Un tableau d'affichage mural dans une coursive. Une fiche-nom a été décollée : il reste un rectangle plus pâle sur le métal terni, comme une cicatrice. Une main effleure l'emplacement vide. | « Les gens bougent. · On se réaffecte. » |
+| 2 | 4–9 s | Un atelier exigu, vidé et réaffecté à la hâte. Un outil personnel oublié dans un coin. Une voisine entrouvre sa porte — et la referme prestement en croisant le regard. | « Les personnes qui sont parties sont bien. » |
+| 3 | 9–15 s | Terminal aux archives : la recherche s'effectue, puis : « AUCUN DOSSIER ACTIF ». La main qui tape hésite, tape encore. Même résultat. | « Il n'y a rien à chercher. · Rien à demander. » |
+| 4 | 15–20 s | Un eyebot dans une coursive — optique rouge lente — pivote vers la caméra, juste un instant, puis repart comme si de rien n'était. Quelqu'un est regardé. | « Rien à quoi se souvenir. » |
+| 5 | 20–25 s | Un hublot de hublot givré dans un couloir sombre. Derrière la vitre, dans la pénombre bleue, un visage que les joueurs pourraient avoir croisé — les yeux fermés, immobile. Trop immobile. Fondu lent. | « Elles sont mieux. » |
+| 6 | 25–28 s | Le tableau d'affichage de nouveau — mais cette fois, deux fiches ont été décollées. Puis trois. Le fondu au noir arrive trop vite. | « · La station est stable. » |
 
 **Note de montage :** le plan 5 est volontairement ambigu — les joueurs ne savent pas si c'est une projection, un rêve, ou quelque chose de réel. Ne pas clarifier. Le plan 6 répète le plan 1 en l'aggravant silencieusement : l'absence se multiplie.
 
