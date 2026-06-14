@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>米 — Le livre des lucioles · Sentinel-7</title>
+<style>
+  :root{ --bg:#07090c; --ink:#e9dcc3; --dim:#9a8f7a; --glow:#ffd86b; --line:#1d2630; --accent:#86c3a9; }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:radial-gradient(120% 90% at 50% 8%, #0d1218 0%, var(--bg) 70%);
+    color:var(--ink); font-family:"Courier New",ui-monospace,monospace;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:24px; overflow:hidden;
+  }
+  .frame{
+    width:min(760px,94vw); border:1px solid var(--line); border-radius:14px;
+    background:linear-gradient(180deg, rgba(20,26,33,.65), rgba(8,10,13,.85));
+    box-shadow:0 0 0 1px rgba(255,255,255,.02), 0 30px 80px rgba(0,0,0,.6);
+    padding:26px 30px 20px; position:relative; backdrop-filter:blur(2px);
+  }
+  .frame::after{ /* scanlines */
+    content:""; position:absolute; inset:0; border-radius:14px; pointer-events:none;
+    background:repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 3px);
+    mix-blend-mode:overlay;
+  }
+  .top{ display:flex; align-items:center; justify-content:space-between; gap:12px;
+        font-size:12px; letter-spacing:.15em; color:var(--dim); text-transform:uppercase; }
+  .cover{ font-size:13px; color:var(--accent); }
+  /* lucioles */
+  .lucioles{ display:flex; gap:9px; align-items:center; }
+  .luc{ width:9px; height:9px; border-radius:50%; background:#2a2f25;
+        transition:background .9s ease, box-shadow .9s ease, opacity .9s ease; opacity:.55; }
+  .luc.on{ background:var(--glow); opacity:1;
+           box-shadow:0 0 6px var(--glow),0 0 14px rgba(255,216,107,.55);
+           animation:flick 2.6s infinite ease-in-out; }
+  @keyframes flick{ 0%,100%{opacity:1} 45%{opacity:.65} 70%{opacity:.9} }
+  h1{ font-size:30px; margin:18px 0 2px; letter-spacing:.02em; font-weight:700; }
+  h1 .han{ color:var(--glow); }
+  .sub{ color:var(--dim); font-size:13px; margin-bottom:18px; }
+  .page{ min-height:228px; }
+  .day{ color:var(--accent); font-size:14px; letter-spacing:.12em; text-transform:uppercase; margin-bottom:12px; }
+  .text{ font-size:18px; line-height:1.7; white-space:pre-wrap; }
+  .text.end{ color:var(--glow); }
+  .stops{ color:var(--dim); font-style:italic; margin-top:14px; }
+  .nav{ display:flex; align-items:center; justify-content:space-between; margin-top:18px;
+        border-top:1px solid var(--line); padding-top:14px; }
+  button{ font:inherit; color:var(--ink); background:transparent; border:1px solid var(--line);
+          padding:9px 16px; border-radius:8px; cursor:pointer; letter-spacing:.05em; transition:.2s; }
+  button:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
+  button:disabled{ opacity:.3; cursor:default; }
+  .count{ color:var(--dim); font-size:12px; letter-spacing:.2em; }
+  .hint{ color:var(--dim); font-size:11px; text-align:center; margin-top:14px; letter-spacing:.08em; }
+  .fade{ animation:fade .5s ease; }
+  @keyframes fade{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+</style>
+</head>
+<body>
+  <div class="frame">
+    <div class="top">
+      <span>Sentinel-7 · Secteur 7-B · archive récupérée</span>
+      <span class="lucioles" id="lucioles"></span>
+    </div>
+    <h1><span class="han">米</span> — mon livre des lucioles</h1>
+    <div class="sub" id="sub">Cahier d'écolier · Mei, 6 ans ½ · Tiangong, 2105</div>
+
+    <div class="page" id="page">
+      <div class="day" id="day"></div>
+      <div class="text" id="text"></div>
+      <div class="stops" id="stops"></div>
+    </div>
+
+    <div class="nav">
+      <button id="prev">◂ page précédente</button>
+      <span class="count" id="count"></span>
+      <button id="next">page suivante ▸</button>
+    </div>
+    <div class="hint" id="hint">Pour le MJ : avancez page à page, lentement. Laissez les silences respirer.</div>
+  </div>
+
+<script>
+  // luc = nombre de lucioles encore allumées sur cette page (sur 3)
+  const PAGES = [
+    { day:"Avant",  luc:3, text:"Madame Chen m'a donné trois lucioles pour mon bocal. Si on est sage, elles brillent jusqu'au matin." },
+    { day:"Jour 1", luc:3, text:"Maman dit qu'on va dormir tous ensemble dans la grande salle ronde, comme une fête. J'ai pris mon bocal." },
+    { day:"Jour 2", luc:3, text:"Papa n'est pas venu. Maman dit qu'il garde la porte. Les grands parlent fort de l'autre côté. L'air sent le métal, comme quand on lèche une pièce." },
+    { day:"Jour 4", luc:3, text:"Madame Chen dit qu'il faut respirer doucement, « comme on souffle sur une soupe ». On fait un concours : celui qui respire le plus petit a gagné. Je gagne souvent.\nMes lucioles brillent moins. Je crois qu'elles sont fatiguées elles aussi." },
+    { day:"Jour 6", luc:2, text:"Une luciole s'est éteinte cette nuit. Je l'ai mise dans ma poche pour qu'elle ait moins froid.\nMaman a pleuré sans bruit ; elle croit que je dormais." },
+    { day:"Jour 9", luc:2, text:"On ne fait plus le concours. Les petits pleurent et ça use l'air, alors on chante tout bas la berceuse de maman.\nIl reste deux lucioles. Je leur ai donné des noms pour qu'elles tiennent : Été et Bientôt." },
+    { day:"Jour 13", luc:1, text:"Été s'est éteinte. Bientôt clignote.\nMaman a écrit une lettre à papa et elle l'a cachée dans le mur. Elle dit que papa la lira « quand la porte s'ouvrira ». Je lui ai demandé quand. Elle n'a pas répondu." },
+    { day:"Jour 16", luc:1, text:"Bientôt brille encore un petit peu si je la tiens contre moi.\nMadame Chen ne se réveille plus. On a mis une couverture sur elle et on parle doucement pour ne pas la déranger." },
+    { day:"Jour 19", luc:1, text:"J'ai sommeil tout le temps. Maman me serre fort.\nElle dit que dehors il y a un vrai ciel, plein de vraies lucioles qu'on appelle des étoiles, et qu'on ira. Je veux bien.\nBientôt brille presque plus." },
+    { day:"Jour 21", luc:0, text:"Maman, je garde la dernière contre mon cœur pour qu'elle ne parte pas avant.\nSi quelqu'un lit mon livre : on n'était pas méchants. On voulait juste —", end:true, stops:"[ Le journal s'arrête ici. ]" }
+  ];
+
+  let i = 0;
+  const elDay=document.getElementById('day'), elText=document.getElementById('text'),
+        elStops=document.getElementById('stops'), elCount=document.getElementById('count'),
+        elPage=document.getElementById('page'), prev=document.getElementById('prev'),
+        next=document.getElementById('next'), lucWrap=document.getElementById('lucioles');
+
+  // build 3 luciole dots
+  const dots=[]; for(let k=0;k<3;k++){ const d=document.createElement('span'); d.className='luc'; lucWrap.appendChild(d); dots.push(d); }
+
+  function render(){
+    const p=PAGES[i];
+    elPage.classList.remove('fade'); void elPage.offsetWidth; elPage.classList.add('fade');
+    elDay.textContent=p.day;
+    elText.textContent=p.text;
+    elText.classList.toggle('end', !!p.end);
+    elStops.textContent=p.stops||"";
+    elCount.textContent=(i+1)+" / "+PAGES.length;
+    prev.disabled=(i===0); next.disabled=(i===PAGES.length-1);
+    dots.forEach((d,k)=> d.classList.toggle('on', k<p.luc));
+  }
+  prev.onclick=()=>{ if(i>0){i--; render();} };
+  next.onclick=()=>{ if(i<PAGES.length-1){i++; render();} };
+  document.addEventListener('keydown',e=>{ if(e.key==='ArrowRight'||e.key===' ')next.onclick(); if(e.key==='ArrowLeft')prev.onclick(); });
+  render();
+</script>
+</body>
+</html>
